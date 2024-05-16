@@ -71,7 +71,7 @@ def handle_message(event):
         message=TextSendMessage(text='https://pay.halapla.net')
         line_bot_api.reply_message(event.reply_token, message)
     else:
-        message = TextSendMessage(text='你說的是不是'+msg)
+        message = TextSendMessage(text='你說的'+msg)
         line_bot_api.reply_message(event.reply_token, message)
 
 @handler.add(PostbackEvent)
