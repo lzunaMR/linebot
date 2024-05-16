@@ -68,8 +68,8 @@ def handle_message(event):
         message = function_list()
         line_bot_api.reply_message(event.reply_token, message)
     elif '哈拉' in msg:
-        message = 'https://pay.halapla.net'
-        line_bot_api.reply_message(event.reply_token, message)
+        url='https://pay.halapla.net'
+        line_bot_api.reply_message(event.reply_token, url)
     else:
         message = TextSendMessage(text='你說的是不是'+msg)
         line_bot_api.reply_message(event.reply_token, message)
