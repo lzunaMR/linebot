@@ -68,7 +68,8 @@ def handle_message(event):
         message = function_list()
         line_bot_api.reply_message(event.reply_token, message)
     elif '課表' in msg:
-        message=ImageSendMessage(original_content_url='static/tmp/IMG_2274 2.jpg',preview_image_url='static/tmp/IMG_2274 2.jpg')
+        image_path=os.path.join(current_directory,'static/tmp/IMG_2274 2.jpg')
+        message=ImageSendMessage(original_content_url=image_path,preview_image_url=image_path)
         line_bot_api.reply_message(event.reply_token, message)
     elif '哈拉' in msg:
         message=TextSendMessage(text='https://pay.halapla.net')
