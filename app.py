@@ -44,7 +44,6 @@ def callback():
         abort(400)
     return 'OK'
 
-current_directory = os.path.dirname(os.path.abspath(__file__))
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -80,7 +79,7 @@ def handle_message(event):
 
 @app.route('/static/tmp/<path:filename>')
 def static_files(filename):
-    return send_from_directory(os.path.join(current_directory, 'static'), filename)
+    return send_from_directory(static_tmp_path, filename)
 
 
 @handler.add(PostbackEvent)
