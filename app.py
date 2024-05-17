@@ -44,7 +44,7 @@ def callback():
         abort(400)
     return 'OK'
 
-
+current_directory = os.path.dirname(os.path.abspath(__file__))
 # 處理訊息
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -77,6 +77,11 @@ def handle_message(event):
     else:
         message = TextSendMessage(text='你說的'+msg)
         line_bot_api.reply_message(event.reply_token, message)
+
+@app.route('/static/tmp/IMG_2274 2.jpg')
+def static_files(filename):
+    return send_from_directory(os.path.join(current_directory, 'static'), filename)
+
 
 @handler.add(PostbackEvent)
 def handle_message(event):
