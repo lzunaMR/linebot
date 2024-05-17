@@ -28,7 +28,7 @@ line_bot_api = LineBotApi('sJFLhDwCUbHOv7omTLw90MuNLr9QmsMybDa58uTho5YIrwIG/Wq+w
 # Channel Secret
 handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
 
-current_directory = os.path.dirname(os.path.abspath(__file__))
+
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -68,7 +68,7 @@ def handle_message(event):
         message = function_list()
         line_bot_api.reply_message(event.reply_token, message)
     elif '課表' in msg:
-        image_path=os.path.join(current_directory,'static/tmp/IMG_2274 2.jpg')
+        image_path='/static/tmp/IMG_2274 2.jpg'
         message=ImageSendMessage(original_content_url=image_path,preview_image_url=image_path)
         line_bot_api.reply_message(event.reply_token, message)
     elif '哈拉' in msg:
