@@ -78,7 +78,7 @@ def handle_message(event):
         message = TextSendMessage(text='你說的'+msg)
         line_bot_api.reply_message(event.reply_token, message)
 
-@app.route('/static/tmp/IMG_2274.jpg')
+@app.route('/static/tmp/<path:filename>')
 def static_files(filename):
     return send_from_directory(os.path.join(current_directory, 'static'), filename)
 
