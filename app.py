@@ -21,7 +21,7 @@ import datetime
 import time
 #======python的函數庫==========
 
-app = Flask(__name__,static_folder='static', static_url_path='/static')
+app = Flask(__name__,static_folder='static/tmp', static_url_path='/static/tmp')
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 # Channel Access Token
 line_bot_api = LineBotApi('sJFLhDwCUbHOv7omTLw90MuNLr9QmsMybDa58uTho5YIrwIG/Wq+wHz1yuHcuCiO+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHszttOurmWWCstxSARi8gJyeRWUovHJOGxureK8LbQVrmXwdB04t89/1O/w1cDnyilFU=')
