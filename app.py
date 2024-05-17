@@ -68,7 +68,7 @@ def handle_message(event):
         message = function_list()
         line_bot_api.reply_message(event.reply_token, message)
     elif '課表' in msg:
-        image_path='/static/tmp/IMG_2274 2.jpg'
+        image_path='/static/tmp/IMG_2274.jpg'
         message=ImageSendMessage(original_content_url=image_path,preview_image_url=image_path)
         line_bot_api.reply_message(event.reply_token, message)
     elif '哈拉' in msg:
@@ -78,7 +78,7 @@ def handle_message(event):
         message = TextSendMessage(text='你說的'+msg)
         line_bot_api.reply_message(event.reply_token, message)
 
-@app.route('/static/tmp/IMG_2274 2.jpg')
+@app.route('/static/tmp/IMG_2274.jpg')
 def static_files(filename):
     return send_from_directory(os.path.join(current_directory, 'static'), filename)
 
