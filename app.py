@@ -19,15 +19,51 @@ from Function import *
 import tempfile, os
 import datetime
 import time
+import sqlite3
 #======python的函數庫==========
 
 app = Flask(__name__,static_folder='static/tmp', static_url_path='/static/tmp')
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 # Channel Access Token
-line_bot_api = LineBotApi('sJFLhDwCUbHOv7omTLw90MuNLr9QmsMybDa58uTho5YIrwIG/Wq+wHz1yuHcuCiO+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHszttOurmWWCstxSARi8gJyeRWUovHJOGxureK8LbQVrmXwdB04t89/1O/w1cDnyilFU=')
+line_bot_api = LineBotApi('Ii1+4SS8b931Rb5rEXMZWDqW+gGNsTlWtgsqxUWYp1aPYoSiwNpKRKe3lMdWBCYE+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHsztWt4ZVkgoe4SCct2Ut1qsBwvUzr2zC9Dlys/QrKuwt8QdB04t89/1O/w1cDnyilFU=')
 # Channel Secret
 handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
 
+# 建立資料庫連接
+def create_connection():
+    return sqlite3.connect('todo_list.db')
+
+# 創建資料庫表格
+def create_table():
+    conn = create_connection()
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS todos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            task TEXT NOT NULL,
+            completed BOOLEAN NOT NULL DEFAULT 0
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# 新增待辦事項
+def add_task(user_id, task):
+    conn = create_connection()
+    c = conn.cursor()
+    c.execute("INSERT INTO todos (user_id, task, completed) VALUES (?, ?, ?)", (user_id, task, False))
+    conn.commit()
+    conn.close()
+
+# 獲取待辦事項列表
+def get_tasks(user_id):
+    conn = create_connection()
+    c = conn.cursor()
+    c.execute("SELECT task FROM todos WHERE user_id=? AND completed=?", (user_id, False))
+    tasks = c.fetchall()
+    conn.close()
+    return tasks
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
@@ -66,6 +102,17 @@ def handle_message(event):
     elif '功能列表' in msg:
         message = function_list()
         line_bot_api.reply_message(event.reply_token, message)
+    elif msg.startswith('add '):
+        task = msg[4:]
+        add_task(user_id, task)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="已新增待辦事項：" + task))
+    elif msg == 'list':
+        tasks = get_tasks(user_id)
+        if tasks:
+            task_list = '\n'.join([task[0] for task in tasks])
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="待辦事項列表：\n" + task_list))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="目前沒有待辦事項！"))
     elif '課表' in msg:
         image_path='/static/tmp/IMG_2274.jpg'
         message=ImageSendMessage(original_content_url=image_path,preview_image_url=image_path)
@@ -81,6 +128,9 @@ def handle_message(event):
 def static_files(filename):
     return send_from_directory(static_tmp_path, filename)
 
+if __name__ == "__main__":
+    create_table()  # 確保資料庫表格存在
+    app.run()
 
 @handler.add(PostbackEvent)
 def handle_message(event):
