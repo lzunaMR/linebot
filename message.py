@@ -1,6 +1,4 @@
 #這些是LINE官方開放的套件組合透過import來套用這個檔案上
-from linebot import (LineBotApi, WebhookHandler)
-from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import *
 
 #ImagemapSendMessage(組圖訊息)
@@ -208,5 +206,3 @@ def image_carousel_message1():
         )
     )
     return message
-
-#關於LINEBOT聊天內容範例
