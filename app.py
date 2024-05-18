@@ -13,6 +13,7 @@ from linebot.models import *
 from message import *
 from new import *
 from Function import *
+from mongodb_function import *
 #======這裡是呼叫的檔案內容=====
 
 #======python的函數庫==========
@@ -35,6 +36,7 @@ def callback():
     signature = request.headers['X-Line-Signature']
     # get request body as text
     body = request.get_data(as_text=True)
+    write_one_data(eval(body.replace('false','False')))
     app.logger.info("Request body: " + body)
     # handle webhook body
     try:
@@ -103,7 +105,7 @@ def handle_message(event):
         message = TextSendMessage(text=text)
         line_bot_api.reply_message(event.reply_token, message)
     else:
-        message = TextSendMessage(text='你說的'+msg)
+        message = TextSendMessage(text=msg)
         line_bot_api.reply_message(event.reply_token, message)
 
 @app.route('/static/tmp/<path:filename>')
