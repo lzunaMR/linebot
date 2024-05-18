@@ -4,7 +4,7 @@
 from pymongo.mongo_client import MongoClient
 uri = "mongodb+srv://789william:123Vanoss@cluster0.binj4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 # Create a new client and connect to the server
-client = MongoClient(uri)
+client = MongoClient(uri,ssl=True)
 
 
 #第一個db的建立
