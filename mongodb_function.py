@@ -1,9 +1,8 @@
-import pymongo
 import ssl
+import pymongo
 # 要獲得mongodb網址，請至mongodb網站申請帳號進行資料庫建立，網址　https://www.mongodb.com/
 # 獲取的網址方法之範例如圖： https://i.imgur.com/HLCk99r.png
-client = pymongo.MongoClient("mongodb+srv://789william:123Vanoss@cluster0.binj4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",ssl=True,
-                             ssl_cert_reqs=ssl.CERT_NONE)
+client = pymongo.MongoClient("mongodb+srv://789william:123Vanoss@cluster0.binj4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",ssl=True)
 
 #第一個db的建立
 db = client['MongoClient']
