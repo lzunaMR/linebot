@@ -68,7 +68,7 @@ def handle_message(event):
         message = function_list()
         line_bot_api.reply_message(event.reply_token, message)
     elif '課表' in msg:
-        image_path='https://github.com/lzunaMR/linebot/blob/master/static/tmp/IMG_2274.jpg'
+        image_path='https://github.com/lzunaMR/linebot/blob/master/static/tmp/IMG_2274.jpg?raw=true'
         message=ImageSendMessage(original_content_url=image_path,preview_image_url=image_path)
         line_bot_api.reply_message(event.reply_token, message)
     elif '哈拉' in msg:
