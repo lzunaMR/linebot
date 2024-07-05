@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from bson import ObjectId
+from datetime import datetime
 
 # MongoDB连接URI
 uri = "mongodb+srv://789william:123Vanoss@cluster0.binj4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -23,14 +24,16 @@ def get_tasks(user_id):
 # 更新提醒时间
 def update_remind_time(task_id, new_time):
     try:
+        collection = connect_to_mongodb()
+        
         # Convert remind_time to datetime object if it's not already
-        if not isinstance(remind_time, datetime):
-            remind_time = datetime.strptime(remind_time, '%Y-%m-%dT%H:%M')
+        if not isinstance(new_time, datetime):
+            new_time = datetime.strptime(new_time, '%Y-%m-%dT%H:%M')
         
         # Update the document in MongoDB
         result = collection.update_one(
-            {'_id': task_id},
-            {'$set': {'remind_time': remind_time}}
+            {'_id': ObjectId(task_id)},
+            {'$set': {'remind_time': new_time}}
         )
         
         if result.modified_count > 0:
