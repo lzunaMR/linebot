@@ -104,7 +104,12 @@ def handle_message(event):
         elif '哈拉' in msg:
             message = TextSendMessage(text='https://pay.halapla.net')
             line_bot_api.reply_message(event.reply_token, message)
-        elif '記事情' in msg:
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
+    except Exception as e:
+        logger.error(f"Error handling message: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
+        """elif '記事情' in msg:
             # Prompt user to enter the task
             line_bot_api.reply_message(
                 event.reply_token,
@@ -144,12 +149,7 @@ def handle_message(event):
                     {"user_id": user_id},
                     {"$set": {"state": "choose_reminder_time"}},
                     upsert=True
-                )
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
-    except Exception as e:
-        logger.error(f"Error handling message: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
+                )"""
 
 # Postback handler for datetime picker
 @handler.add(PostbackEvent)
