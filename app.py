@@ -37,7 +37,7 @@ def callback():
 def handle_message(event):
     msg = event.message.text
     user_id = event.source.user_id
-
+    logger.info(f'Received message: {msg} from user: {user_id}')
     if '最新合作廠商' in msg:
         message = imagemap_message()
         line_bot_api.reply_message(event.reply_token, message)
@@ -100,6 +100,7 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, datetime_picker_template)
     elif '提醒時間' in msg:
         remind_time = datetime.strptime(msg.split('提醒時間 ')[-1], '%Y-%m-%dT%H:%M')
+        logger.info(f'Reminder time selected: {remind_time}')
         tasks = db.get_tasks(user_id)
         last_task = tasks[-1] if tasks else None
         if last_task:
