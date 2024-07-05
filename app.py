@@ -46,13 +46,44 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
+    
     elif event.postback.data.startswith('delete_task&'):
         task_id = event.postback.data.split('&')[1]
         if db.delete_task(task_id):
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
+            # 成功刪除後的回應
+            tasks = db.get_tasks(event.source.user_id)
+            if tasks:
+                carousel_columns = []
+                
+                for task in tasks:
+                    task_id = task['_id']
+                    task_text = task['task']
+                    
+                    carousel_column = CarouselColumn(
+                        text=task_text,
+                        actions=[
+                            PostbackTemplateAction(
+                                label='刪除',
+                                data=f'delete_task&{task_id}'
+                            )
+                        ]
+                    )
+                    carousel_columns.append(carousel_column)
+                
+                carousel_template = TemplateSendMessage(
+                    alt_text='所有記錄事項',
+                    template=CarouselTemplate(columns=carousel_columns)
+                )
+                # 回應刪除完成並更新旋轉木馬
+                line_bot_api.reply_message(event.reply_token, [
+                    TextSendMessage(text='已成功刪除該記錄事項。'),
+                    carousel_template
+                ])
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text='您目前沒有任何記錄事項。'))
         else:
+            # 刪除失敗時的回應
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))
-
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
