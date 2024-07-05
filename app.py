@@ -26,6 +26,7 @@ import tempfile, os
 from datetime import datetime
 import time
 import logging
+import threading
 #======python的函數庫==========
 #======讓render不會睡著======
 """import threading 
