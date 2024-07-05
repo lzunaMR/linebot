@@ -33,63 +33,61 @@ def callback():
         abort(400)
     return 'OK'
 
+# 產生用於編輯任務的按鈕
 def generate_task_buttons(tasks):
     buttons = []
     for task in tasks:
         button = PostbackAction(
             label=task['task'],
-            data=f"edit_task_{task['_id']}"  # Example data for editing task
+            data=f"edit_task_{task['_id']}"
         )
         buttons.append(button)
     return buttons
 
-# Function to display all tasks
+# 顯示所有任務的函式
 def display_all_tasks(event):
     user_id = event.source.user_id
-    tasks = db.get_tasks(user_id)
+    tasks = db.get_tasks(user_id)  # 從資料庫取得使用者所有任務
     if tasks:
         task_buttons = generate_task_buttons(tasks)
         message = TemplateSendMessage(
-            alt_text='All Tasks',
+            alt_text='所有任務',
             template=ButtonsTemplate(
-                title='All Tasks',
-                text='Select a task to edit or delete:',
+                title='所有任務',
+                text='請選擇要編輯或刪除的任務：',
                 actions=task_buttons
             )
         )
         line_bot_api.reply_message(event.reply_token, message)
     else:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='No tasks found.'))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='找不到任何任務。'))
 
-# Function to handle editing task details
+# 處理編輯任務細節的功能
 @handler.add(PostbackEvent)
 def handle_edit_task(event):
     user_id = event.source.user_id
     if event.postback.data.startswith('edit_task_details_'):
         task_id = event.postback.data.split('_')[-1]
-        # Implement logic to prompt user for new task details and update in database
-        # Example: send a message to get new task details and update in database
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='Please enter the updated task details.'))
+        # 實作提示用戶輸入新的任務細節並更新資料庫的邏輯
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入更新後的任務細節。'))
 
-
-# Function to handle editing reminder time
+# 處理編輯提醒時間的功能
 @handler.add(PostbackEvent)
 def handle_edit_reminder_time(event):
     user_id = event.source.user_id
     if event.postback.data.startswith('edit_reminder_time_'):
         task_id = event.postback.data.split('_')[-1]
-        # Implement logic to prompt user for new reminder time and update in database
-        # Example: send a message to get new reminder time and update in database
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='Please select a new reminder time.'))
+        # 實作提示用戶選擇新的提醒時間並更新資料庫的邏輯
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請選擇新的提醒時間。'))
 
+# 處理刪除任務的功能
 @handler.add(PostbackEvent)
 def handle_delete_task(event):
     user_id = event.source.user_id
     if event.postback.data.startswith('delete_task_'):
         task_id = event.postback.data.split('_')[-1]
-        db.delete_task(task_id)
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='Task deleted successfully.'))
-
+        db.delete_task(task_id)  # 從資料庫刪除指定任務
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='任務刪除成功。'))
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
