@@ -305,11 +305,11 @@ def handle_reminder_time(event, line_bot_api, data):
         logger.info(f"Received postback data: {data}")
 
         # 假设数据格式为 reminder_time=<task_id>,<new_time>
-        if '=' not in data or ',' not in data:
+        if ',' not in data:
             raise ValueError("Invalid data format for reminder_time")
 
         # 解析数据
-        task_id, new_time = data.split('=')[1].split(',', 1)
+        task_id, new_time = data.split(',', 1)
         
         logger.info(f"Parsed task_id: {task_id}, new_time: {new_time}")
 
@@ -319,6 +319,9 @@ def handle_reminder_time(event, line_bot_api, data):
             event.reply_token,
             TextSendMessage(text=f'提醒時間已更新為：{new_time}')
         )
+    except ValueError as ve:
+        logger.error(f"ValueError in handle_reminder_time: {ve}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="資料格式錯誤，請稍後再試。"))
     except Exception as e:
         logger.error(f"Error in handle_reminder_time: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
