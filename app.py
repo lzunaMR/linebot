@@ -170,10 +170,12 @@ def handle_message(event):
 
 def send_reminder_messages():
     while True:
-        remindable_tasks = db.get_remindable_tasks(user_id)  # 使用您的資料庫操作獲取需要提醒的任務
+        logger.info('Checking for tasks to remind...')
+        remindable_tasks = get_remindable_tasks()  # 使用您的資料庫操作獲取需要提醒的任務
         for task in remindable_tasks:
             task_text = task['task']
             user_id = task['user_id']
+            logger.info(f'Sending reminder for task: {task_text} to user: {user_id}')
             line_bot_api.push_message(user_id, TextSendMessage(text=f'提醒您，您有一個任務需要完成：{task_text}'))
         time.sleep(60)  # 每分鐘檢查一次
 
