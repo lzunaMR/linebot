@@ -210,7 +210,6 @@ def image_carousel_message1():
     return message
 
 #===============to do list=============================================
-
 def handle_message(event, line_bot_api):
     user_id = event.source.user_id
     message_text = event.message.text
@@ -323,4 +322,5 @@ def handle_delete(event, line_bot_api, data):
     except Exception as e:
         logger.error(f"Error in handle_delete: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
+
 #===============to do list=============================================

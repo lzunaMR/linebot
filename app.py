@@ -10,7 +10,7 @@ from linebot.models import *
 
 
 #======這裡是呼叫的檔案內容=====
-from message import *
+import message as msg_moudle
 from new import *
 from Function import *
 import mongodb_function as db
@@ -37,11 +37,11 @@ def wake_up_heroku():
 
 threading.Thread(target=wake_up_heroku).start()"""
 #======讓heroku不會睡著======
-# 設置日誌記錄
 
 app = Flask(__name__,static_folder='./static/tmp', static_url_path='/images')
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
+# 設置日誌記錄
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def callback():
 def handle_message(event):
     msg = event.message.text
     user_id = event.source.user_id
-    
+
     try:
         if '最新合作廠商' in msg:
             message = imagemap_message()
@@ -98,9 +98,9 @@ def handle_message(event):
             message = TextSendMessage(text='https://pay.halapla.net')
             line_bot_api.reply_message(event.reply_token, message)
         elif '記事情' in msg:
-            message.handle_message(event, line_bot_api)
+            msg_module.handle_message(event, line_bot_api)
         elif '提醒事項' in msg:
-            message.handle_message(event, line_bot_api)
+            msg_module.handle_message(event, line_bot_api)
         else:
             message = TextSendMessage(text=msg)
             line_bot_api.reply_message(event.reply_token, message)
@@ -111,7 +111,7 @@ def handle_message(event):
 @handler.add(PostbackEvent)
 def handle_postback(event):
     try:
-        message.handle_postback(event, line_bot_api)
+        msg_module.handle_postback(event, line_bot_api)
     except Exception as e:
         logger.error(f"Error handling postback: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
