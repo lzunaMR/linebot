@@ -89,7 +89,10 @@ def handle_message(event):
     elif '哈拉' in msg:
         message=TextSendMessage(text='https://pay.halapla.net')
         line_bot_api.reply_message(event.reply_token, message)
-    elif '@讀取' in msg:
+    else:
+        message = TextSendMessage(text=msg)
+        line_bot_api.reply_message(event.reply_token, message)
+    """elif '@讀取' in msg:
         datas = read_many_datas()
         datas_len = len(datas)
         message = TextSendMessage(text=f'資料數量，一共{datas_len}條')
@@ -118,14 +121,7 @@ def handle_message(event):
     elif '@刪除' in msg:
         text = delete_all_data()
         message = TextSendMessage(text=text)
-        line_bot_api.reply_message(event.reply_token, message)
-    else:
-        message = TextSendMessage(text=msg)
-        line_bot_api.reply_message(event.reply_token, message)
-
-@app.route('/static/tmp/<path:filename>')
-def static_files(filename):
-    return send_from_directory(static_tmp_path, filename)
+        line_bot_api.reply_message(event.reply_token, message)"""
 
 @handler.add(PostbackEvent)
 def handle_message(event):

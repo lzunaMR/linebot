@@ -96,5 +96,5 @@ def col_find(key):
     print(data)
     return data"""
 
-#if __name__ == '__main__':
- #   print(read_many_datas())
+if __name__ == '__main__':
+    print(read_many_datas())
