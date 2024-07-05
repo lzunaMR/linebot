@@ -63,6 +63,7 @@ collection = db['to_do_list']
 def send_reminder_messages():
     while True:
         now = datetime.now()
+        collection = db.connect_to_mongodb()
         tasks = collection.find({"remind_time": {"$lte": now}, "reminded": {"$ne": True}})
         for task in tasks:
             user_id = task["user_id"]
