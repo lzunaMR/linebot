@@ -52,6 +52,81 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='處理提醒時間時發生錯誤。'))
 
 
+def generate_task_buttons(tasks):
+    buttons = []
+    for task in tasks:
+        button = PostbackAction(
+            label=task['task'],
+            data=f"edit_task_{task['_id']}"  # Example data for editing task
+        )
+        buttons.append(button)
+    return buttons
+
+# Function to handle postback actions for editing tasks
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    user_id = event.source.user_id
+    if event.postback.data.startswith('edit_task_'):
+        task_id = event.postback.data.split('_')[-1]
+        # You can implement logic here to prompt user for editing task or reminder time
+        # For example, sending a message with options to edit task details
+        message = TemplateSendMessage(
+            alt_text='Edit Task Options',
+            template=ButtonsTemplate(
+                title='Edit Task Options',
+                text='Choose an option:',
+                actions=[
+                    PostbackAction(label='Edit Task', data=f'edit_task_details_{task_id}'),
+                    PostbackAction(label='Edit Reminder Time', data=f'edit_reminder_time_{task_id}'),
+                    PostbackAction(label='Cancel', data='cancel')
+                ]
+            )
+        )
+        line_bot_api.reply_message(event.reply_token, message)
+    elif event.postback.data.startswith('delete_task_'):
+        task_id = event.postback.data.split('_')[-1]
+        db.delete_task(task_id)
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='Task deleted successfully.'))
+
+# Function to handle editing task details
+@handler.add(PostbackEvent)
+def handle_edit_task(event):
+    user_id = event.source.user_id
+    if event.postback.data.startswith('edit_task_details_'):
+        task_id = event.postback.data.split('_')[-1]
+        # Implement logic to prompt user for new task details and update in database
+        # Example: send a message to get new task details and update in database
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='Please enter the updated task details.'))
+
+# Function to handle editing reminder time
+@handler.add(PostbackEvent)
+def handle_edit_reminder_time(event):
+    user_id = event.source.user_id
+    if event.postback.data.startswith('edit_reminder_time_'):
+        task_id = event.postback.data.split('_')[-1]
+        # Implement logic to prompt user for new reminder time and update in database
+        # Example: send a message to get new reminder time and update in database
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='Please select a new reminder time.'))
+
+# Function to display all tasks
+def display_all_tasks(event):
+    user_id = event.source.user_id
+    tasks = db.get_tasks(user_id)
+    if tasks:
+        task_buttons = generate_task_buttons(tasks)
+        message = TemplateSendMessage(
+            alt_text='All Tasks',
+            template=ButtonsTemplate(
+                title='All Tasks',
+                text='Select a task to edit or delete:',
+                actions=task_buttons
+            )
+        )
+        line_bot_api.reply_message(event.reply_token, message)
+    else:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='No tasks found.'))
+
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg = event.message.text
