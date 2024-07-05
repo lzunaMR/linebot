@@ -53,6 +53,7 @@ def handle_postback(event):
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))
 
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg = event.message.text
@@ -83,7 +84,7 @@ def handle_message(event):
     elif '哈拉' in msg:
         message = TextSendMessage(text='https://pay.halapla.net')
         line_bot_api.reply_message(event.reply_token, message)
-    if '所有記錄事項' in msg:
+    elif '所有記錄事項' in msg:
         tasks = db.get_tasks(user_id)
         
         if tasks:
@@ -93,13 +94,13 @@ def handle_message(event):
                 task_id = task['_id']
                 task_text = task['task']
                 
-                # 創建每個旋轉木馬的列
+                # 创建每个旋转木马的列
                 carousel_column = CarouselColumn(
                     text=task_text,
                     actions=[
                         PostbackTemplateAction(
                             label='刪除',
-                            data=f'delete_task&{task_id}'  # 使用 PostbackEvent 來處理刪除操作
+                            data=f'delete_task&{task_id}'  # 使用 PostbackEvent 处理删除操作
                         )
                     ]
                 )
