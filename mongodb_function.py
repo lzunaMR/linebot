@@ -120,7 +120,7 @@ def get_task_by_id(task_id):
         print(f"Error getting task by ID: {e}")
         return None
     
-def get_remindable_tasks(user_id):
+"""def get_remindable_tasks(user_id):
     current_time = datetime.now()
     tasks = db.get_tasks(user_id)  # 使用您的資料庫操作獲取所有任務
     remindable_tasks = []
@@ -128,6 +128,20 @@ def get_remindable_tasks(user_id):
         remind_time = task.get('remind_time')
         if remind_time and remind_time <= current_time:
             remindable_tasks.append(task)
+    return remindable_tasks"""
+
+def get_remindable_tasks(user_id):
+    current_time = datetime.now()
+    tasks = db.get_tasks(user_id)  # 使用您的資料庫操作獲取所有任務
+    remindable_tasks = []
+    
+    for task in tasks:
+        remind_time = task.get('remind_time')
+        if remind_time:
+            logger.info(f'Task: {task["_id"]}, Remind time: {remind_time}, Current time: {current_time}')
+            if remind_time <= current_time:
+                remindable_tasks.append(task)
+    
     return remindable_tasks
 
 # 启动后台提醒任务的线程
