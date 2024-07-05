@@ -66,42 +66,15 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
-    
     elif event.postback.data.startswith('delete_task&'):
         task_id = event.postback.data.split('&')[1]
         if db.delete_task(task_id):
-            tasks = db.get_tasks(event.source.user_id)
-            if tasks:
-                carousel_columns = []
-                
-                for task in tasks:
-                    task_id = task['_id']
-                    task_text = task['task']
-                    
-                    carousel_column = CarouselColumn(
-                        text=task_text,
-                        actions=[
-                            PostbackTemplateAction(
-                                label='刪除',
-                                data=f'delete_task&{task_id}'
-                            )
-                        ]
-                    )
-                    carousel_columns.append(carousel_column)
-                
-                carousel_template = TemplateSendMessage(
-                    alt_text='所有記錄事項',
-                    template=CarouselTemplate(columns=carousel_columns)
-                )
-                # 先回應刪除成功
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
-                # 再回應更新的旋轉木馬
-                line_bot_api.push_message(event.source.user_id, carousel_template)
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text='您目前沒有任何記錄事項。'))
+            line_bot_api.reply_message(event.reply_token, [
+                TextSendMessage(text='已成功刪除該記錄事項。'),
+                handle_view_all_tasks(event)  # 重新顯示所有記錄事項
+            ])
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))
-
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -163,8 +136,8 @@ def handle_message(event):
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='您目前沒有任何記錄事項。'))
         return
-    elif '記錄事項' in msg:
-        task = msg.replace('記錄事項', '').strip()
+    elif '/記' in msg:
+        task = msg.replace('/記', '').strip()
         if task:
             db.add_new_task(user_id, task, None)
             confirm_template = ConfirmTemplate(
@@ -198,8 +171,6 @@ def handle_message(event):
             )
         )
         line_bot_api.reply_message(event.reply_token, datetime_picker_template)
-    elif '提醒時間' in msg:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請使用選擇時間的方式來設定提醒時間。'))
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
