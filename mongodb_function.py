@@ -69,7 +69,8 @@ def add_new_task(user_id, task, remind_time):
             'user_id': user_id,
             'task': task,
             'remind_time': remind_time,
-            'reminded': False
+            'reminded': False,
+            'created_at': datetime.now()  
         })
     except Exception as e:
         print(f"Error adding new task: {e}")
@@ -108,26 +109,16 @@ def get_task_by_id(task_id):
     except Exception as e:
         print(f"Error getting task by ID: {e}")
         return None
-
-def send_reminder_messages():
-    while True:
-        now = datetime.now()
-        collection = connect_to_mongodb()
-        tasks = list(collection.find({'remind_time': {'$lte': now}, 'reminded': False}))
-        
-        for task in tasks:
-            task_id = task['_id']
-            user_id = task['user_id']
-            task_text = task['task']
-            
-            # 发送提醒消息给用户
-            # 这里可以调用 Line Bot API 发送提醒消息
-            print(f"Reminder sent for task: {task_text} to user: {user_id}")
-            
-            # 更新提醒状态为已提醒
-            collection.update_one({'_id': task_id}, {'$set': {'reminded': True}})
-        
-        time.sleep(60)  # 每分钟检查一次
+    
+def get_remindable_tasks(user_id):
+    current_time = datetime.now()
+    tasks = db.get_tasks(user_id)  # 使用您的資料庫操作獲取所有任務
+    remindable_tasks = []
+    for task in tasks:
+        remind_time = task.get('remind_time')
+        if remind_time and remind_time <= current_time:
+            remindable_tasks.append(task)
+    return remindable_tasks
 
 # 启动后台提醒任务的线程
 if __name__ == "__main__":

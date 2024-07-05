@@ -69,7 +69,6 @@ def handle_postback(event):
     elif event.postback.data.startswith('delete_task&'):
         task_id = event.postback.data.split('&')[1]
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='成功刪除'))
-        handle_view_all_tasks(event)
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -168,6 +167,16 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, datetime_picker_template)
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
+
+def send_reminder_messages():
+    while True:
+        remindable_tasks = db.get_remindable_tasks(user_id)  # 使用您的資料庫操作獲取需要提醒的任務
+        for task in remindable_tasks:
+            task_text = task['task']
+            user_id = task['user_id']
+            line_bot_api.push_message(user_id, TextSendMessage(text=f'提醒您，您有一個任務需要完成：{task_text}'))
+        time.sleep(60)  # 每分鐘檢查一次
+
 
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=send_reminder_messages)
