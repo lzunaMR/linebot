@@ -261,11 +261,12 @@ def handle_message(event, line_bot_api):
 
 def send_datetime_picker(event, line_bot_api, task_id):
     try:
-        logger.info("發送日期時間選擇器")
+        logger.info("Sending datetime picker")
 
         flex_message = FlexSendMessage(
             alt_text='選擇提醒時間',
             contents=BubbleContainer(
+                direction='ltr',  # 文字方向由左到右
                 body=BoxComponent(
                     layout='vertical',
                     contents=[
@@ -275,7 +276,8 @@ def send_datetime_picker(event, line_bot_api, task_id):
                                 label='選擇日期時間',
                                 data=f'reminder_time,{task_id}',  # 包含 task_id 的數據
                                 mode='datetime',
-                                min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                initial=datetime.datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                min=datetime.datetime.now().strftime('%Y-%m-%dT%H:%M'),
                                 max=None
                             )
                         )
@@ -285,8 +287,9 @@ def send_datetime_picker(event, line_bot_api, task_id):
         )
         line_bot_api.reply_message(event.reply_token, flex_message)
     except Exception as e:
-        logger.error(f"發送日期時間選擇器時發生錯誤: {e}")
+        logger.error(f"Error in send_datetime_picker: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
+
 
 def send_to_do_list(event, line_bot_api, user_id):
     try:
