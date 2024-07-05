@@ -78,11 +78,33 @@ def handle_message(event):
     elif '哈拉' in msg:
         message = TextSendMessage(text='https://pay.halapla.net')
         line_bot_api.reply_message(event.reply_token, message)
-    elif '所有記錄事項' in msg:
+    if '所有記錄事項' in msg:
         tasks = db.get_tasks(user_id)
+        
         if tasks:
-            task_list = "\n".join([f"{task['_id']}: {task['task']}" for task in tasks])
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'所有記錄事項:\n{task_list}'))
+            carousel_columns = []
+            
+            for task in tasks:
+                task_id = task['_id']
+                task_text = task['task']
+                
+                # 創建每個旋轉木馬的列
+                carousel_column = CarouselColumn(
+                    text=task_text,
+                    actions=[
+                        PostbackTemplateAction(
+                            label='刪除',
+                            data=f'delete_task&{task_id}'  # 使用 PostbackEvent 來處理刪除操作
+                        )
+                    ]
+                )
+                carousel_columns.append(carousel_column)
+            
+            carousel_template = TemplateSendMessage(
+                alt_text='所有記錄事項',
+                template=CarouselTemplate(columns=carousel_columns)
+            )
+            line_bot_api.reply_message(event.reply_token, carousel_template)
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='您目前沒有任何記錄事項。'))
         return
