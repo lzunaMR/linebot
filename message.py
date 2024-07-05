@@ -2,6 +2,7 @@
 from linebot.models import *
 import mongodb_function as db
 import logging
+from datetime import datetime
 logger = logging.getLogger(__name__)
 #ImagemapSendMessage(組圖訊息)
 def imagemap_message():
@@ -238,7 +239,7 @@ def send_datetime_picker(event, line_bot_api):
                                 label='選擇日期時間',
                                 data='reminder_time',
                                 mode='datetime',
-                                min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                min=datetime.now().strftime('%Y-%m-%dT%H:%M'),  # 使用 datetime 类的 now 方法
                                 max=None
                             )
                         )
