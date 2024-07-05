@@ -14,6 +14,8 @@ import message as msg_module
 from new import *
 from Function import *
 import mongodb_function as db
+from new import *
+from Function import *
 #======這裡是呼叫的檔案內容=====
 
 #======python的函數庫==========
@@ -56,6 +58,20 @@ handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
 client = MongoClient("mongodb+srv://789william:123Vanoss@cluster0.binj4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client['MongoClient']
 collection = db['to_do_list']
+
+def send_reminder_messages():
+    while True:
+        now = datetime.now()
+        tasks = collection.find({"remind_time": {"$lte": now}, "reminded": {"$ne": True}})
+        for task in tasks:
+            user_id = task["user_id"]
+            task_desc = task["task"]
+            line_bot_api.push_message(user_id, TextSendMessage(text=f"提醒：{task_desc}"))
+            collection.update_one({"_id": task["_id"]}, {"$set": {"reminded": True}})
+        time.sleep(60)
+
+reminder_thread = threading.Thread(target=send_reminder_messages)
+reminder_thread.start()
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
@@ -105,20 +121,17 @@ def handle_message(event):
             message = TextSendMessage(text='https://pay.halapla.net')
             line_bot_api.reply_message(event.reply_token, message)
         elif '記事情' in msg:
-            # Prompt user to enter the task
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text='請輸入要記的事情：')
             )
-            # Update user state to input_task
             collection.update_one(
                 {"user_id": user_id},
                 {"$set": {"state": "input_task"}},
                 upsert=True
             )
         elif '提醒事項' in msg:
-            # Retrieve and send all tasks for the user
-            tasks = get_tasks(user_id)
+            tasks = db.get_tasks(user_id)
             if tasks:
                 task_messages = []
                 for task in tasks:
@@ -127,27 +140,77 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text='沒有提醒事項。'))
         else:
-            # Handle the user's input after prompting to record a task
             user_state = collection.find_one({"user_id": user_id})
             if user_state and user_state.get("state") == "input_task":
-                # Record the task with remind_time as None initially
-                add_new_task(user_id, msg, None)
+                db.add_new_task(user_id, msg, None)
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text='紀錄成功。您需要設定提醒功能嗎？')
+                    TextSendMessage(text='紀錄成功。您需要設定提醒功能嗎？(請回答 是 或 否)')
                 )
-                # Update user state to ask_reminder
                 collection.update_one(
                     {"user_id": user_id},
-                    {"$set": {"state": "ask_reminder"}},
+                    {"$set": {"state": "ask_reminder", "last_task": msg}},
                     upsert=True
                 )
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
-    
+            elif user_state and user_state.get("state") == "ask_reminder":
+                if msg == '是':
+                    date_picker = TemplateSendMessage(
+                        alt_text='選擇提醒時間',
+                        template=ButtonsTemplate(
+                            title='選擇提醒時間',
+                            text='請選擇提醒的日期和時間',
+                            actions=[
+                                DatetimePickerAction(
+                                    label="選擇時間",
+                                    data="reminder_time",
+                                    mode="datetime",
+                                    initial=datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                    min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                    max=(datetime.now() + timedelta(days=365)).strftime('%Y-%m-%dT%H:%M')
+                                )
+                            ]
+                        )
+                    )
+                    line_bot_api.reply_message(event.reply_token, date_picker)
+                    collection.update_one(
+                        {"user_id": user_id},
+                        {"$set": {"state": "set_reminder"}},
+                        upsert=True
+                    )
+                else:
+                    line_bot_api.reply_message(event.reply_token, TextSendMessage(text='好的，沒有設定提醒功能。'))
+                    collection.update_one(
+                        {"user_id": user_id},
+                        {"$set": {"state": "normal"}},
+                        upsert=True
+                    )
+            elif user_state and user_state.get("state") == "set_reminder":
+                pass  # Datetime picker will handle this state
+
     except Exception as e:
         logger.error(f"Error handling message: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
+
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    user_id = event.source.user_id
+    data = event.postback.data
+
+    if data == 'reminder_time':
+        remind_time = event.postback.params['datetime']
+        user_state = collection.find_one({"user_id": user_id})
+        if user_state and user_state.get("state") == "set_reminder":
+            last_task = user_state.get("last_task")
+            db.update_remind_time(last_task, remind_time)
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f'提醒時間設定成功：{remind_time}')
+            )
+            collection.update_one(
+                {"user_id": user_id},
+                {"$set": {"state": "normal"}},
+                upsert=True
+            )
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
