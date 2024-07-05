@@ -80,22 +80,22 @@ def handle_message(event):
 
     try:
         if '最新合作廠商' in msg:
-            message = imagemap_message()
+            message = msg_module.imagemap_message()
             line_bot_api.reply_message(event.reply_token, message)
         elif '最新活動訊息' in msg:
-            message = buttons_message()
+            message = msg_module.buttons_message()
             line_bot_api.reply_message(event.reply_token, message)
         elif '註冊會員' in msg:
-            message = Confirm_Template()
+            message = msg_module.Confirm_Template()
             line_bot_api.reply_message(event.reply_token, message)
         elif '旋轉木馬' in msg:
-            message = Carousel_Template()
+            message = msg_module.Carousel_Template()
             line_bot_api.reply_message(event.reply_token, message)
         elif '圖片畫廊' in msg:
-            message = test()
+            message = msg_module.test()
             line_bot_api.reply_message(event.reply_token, message)
         elif '功能列表' in msg:
-            message = function_list()
+            message = msg_module.function_list()
             line_bot_api.reply_message(event.reply_token, message)
         elif '課表' in msg:
             image_path = 'https://github.com/lzunaMR/linebot/blob/master/static/tmp/IMG_2274.jpg?raw=true'
@@ -104,12 +104,7 @@ def handle_message(event):
         elif '哈拉' in msg:
             message = TextSendMessage(text='https://pay.halapla.net')
             line_bot_api.reply_message(event.reply_token, message)
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
-    except Exception as e:
-        logger.error(f"Error handling message: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
-        """elif '記事情' in msg:
+        elif '記事情' in msg:
             # Prompt user to enter the task
             line_bot_api.reply_message(
                 event.reply_token,
@@ -132,107 +127,9 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text='沒有提醒事項。'))
         else:
-            # Check if user is in input_task state
-            user_state = collection.find_one({"user_id": user_id})
-            if user_state and user_state.get("state") == "input_task":
-                # Save the task
-                add_new_task(user_id, msg, None)
-                task_id = str(collection.find_one({"user_id": user_id, "task": msg})['_id'])
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text='請選擇提醒時間：')
-                )
-                # Send datetime picker
-                send_datetime_picker(event, line_bot_api, task_id)
-                # Update user state to choose_reminder_time
-                collection.update_one(
-                    {"user_id": user_id},
-                    {"$set": {"state": "choose_reminder_time"}},
-                    upsert=True
-                )"""
-
-# Postback handler for datetime picker
-@handler.add(PostbackEvent)
-def handle_postback(event):
-    try:
-        data = event.postback.data
-        if data.startswith('reminder_time'):
-            handle_reminder_time(event, line_bot_api, data)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
     except Exception as e:
-        logger.error(f"Error handling postback: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
-
-# MemberJoinedEvent handler
-@handler.add(MemberJoinedEvent)
-def welcome(event):
-    try:
-        uid = event.joined.members[0].user_id
-        gid = event.source.group_id
-        profile = line_bot_api.get_group_member_profile(gid, uid)
-        name = profile.display_name
-        message = TextSendMessage(text=f'{name}歡迎加入')
-        line_bot_api.reply_message(event.reply_token, message)
-    except Exception as e:
-        logger.error(f"Error welcoming new member: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
-
-# Function to send datetime picker
-def send_datetime_picker(event, line_bot_api, task_id):
-    try:
-        logger.info("Sending datetime picker")
-        flex_message = FlexSendMessage(
-            alt_text='選擇提醒時間',
-            contents=BubbleContainer(
-                body=BoxComponent(
-                    layout='vertical',
-                    contents=[
-                        TextComponent(text='請選擇提醒時間：'),
-                        ButtonComponent(
-                            action=DatetimePickerAction(
-                                label='選擇日期時間',
-                                data=f'reminder_time,{task_id}',
-                                mode='datetime',
-                                min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
-                                max=None
-                            )
-                        )
-                    ]
-                )
-            )
-        )
-        line_bot_api.reply_message(event.reply_token, flex_message)
-    except Exception as e:
-        logger.error(f"Error in send_datetime_picker: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
-
-# Function to handle reminder time selection
-def handle_reminder_time(event, line_bot_api, data):
-    try:
-        logger.info(f"Received postback data: {data}")
-        if data.count(',') != 1:
-            raise ValueError(f"Invalid data format for reminder_time: {data}")
-        _, task_id = data.split(',', 1)
-        if not ObjectId.is_valid(task_id):
-            raise ValueError(f"Invalid task_id: {task_id}")
-        new_time = event.postback.params.get('datetime')
-        if not new_time:
-            raise ValueError("New time is not provided in the callback params.")
-        logger.info(f"Parsed task_id: {task_id}, new_time: {new_time}")
-        update_remind_time(task_id, new_time)
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=f'提醒時間已更新為：{new_time}')
-        )
-        collection.update_one(
-            {"user_id": event.source.user_id},
-            {"$set": {"state": "idle"}},
-            upsert=True
-        )
-    except ValueError as ve:
-        logger.error(f"ValueError in handle_reminder_time: {ve}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="資料格式錯誤，請稍後再試。"))
-    except Exception as e:
-        logger.error(f"Error in handle_reminder_time: {e}")
+        logger.error(f"Error handling message: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
 if __name__ == "__main__":

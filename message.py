@@ -42,6 +42,24 @@ def handle_message(event, line_bot_api):
     except Exception as e:
         print(f"Error handling message: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
+   # 添加新待辦任務
+def add_new_task(user_id, task, remind_time=None):
+    collection = connect_to_mongodb()
+    collection.insert_one({
+        'user_id': user_id,
+        'task': task,
+        'remind_time': remind_time
+    })
+
+# 刪除待辦任務
+def delete_task(task_id):
+    collection = connect_to_mongodb()
+    collection.delete_one({'_id': ObjectId(task_id)})
+
+# 根據任務 ID 獲取任務詳情
+def get_task_by_id(task_id):
+    collection = connect_to_mongodb()
+    return collection.find_one({'_id': ObjectId(task_id)}) 
 #===============to do list=============================================
 
 
