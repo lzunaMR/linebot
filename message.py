@@ -2,6 +2,7 @@
 from linebot.models import *
 import mongodb_function as db
 import logging
+logger = logging.getLogger(__name__)
 #ImagemapSendMessage(組圖訊息)
 def imagemap_message():
     message = ImagemapSendMessage(
@@ -209,22 +210,23 @@ def image_carousel_message1():
     return message
 
 #===============to do list=============================================
+
 def handle_message(event, line_bot_api):
     user_id = event.source.user_id
     message_text = event.message.text
 
-    logging.info(f"Received message: {message_text}")
+    logger.info(f"Received message: {message_text}")
 
     if message_text == '記事情':
-        logging.info("Handling '記事情'")
+        logger.info("Handling '記事情'")
         send_datetime_picker(event, line_bot_api)
     elif message_text == '提醒事項':
-        logging.info("Handling '提醒事項'")
+        logger.info("Handling '提醒事項'")
         send_to_do_list(event, line_bot_api, user_id)
 
 def send_datetime_picker(event, line_bot_api):
     try:
-        logging.info("Sending datetime picker")
+        logger.info("Sending datetime picker")
         flex_message = FlexSendMessage(
             alt_text='選擇提醒時間',
             contents=BubbleContainer(
@@ -245,11 +247,12 @@ def send_datetime_picker(event, line_bot_api):
         )
         line_bot_api.reply_message(event.reply_token, flex_message)
     except Exception as e:
-        logging.error(f"Error in send_datetime_picker: {e}")
+        logger.error(f"Error in send_datetime_picker: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
 def send_to_do_list(event, line_bot_api, user_id):
     try:
-        logging.info("Sending to-do list")
+        logger.info("Sending to-do list")
         tasks = db.get_tasks(user_id)
         contents = []
         for task in tasks:
@@ -280,15 +283,20 @@ def send_to_do_list(event, line_bot_api, user_id):
         )
         line_bot_api.reply_message(event.reply_token, flex_message)
     except Exception as e:
-        logging.error(f"Error in send_to_do_list: {e}")
+        logger.error(f"Error in send_to_do_list: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
 def handle_postback(event, line_bot_api):
     data = event.postback.data
 
-    if data.startswith('reminder_time'):
-        handle_reminder_time(event, line_bot_api, data)
-    elif data.startswith('delete'):
-        handle_delete(event, line_bot_api, data)
+    try:
+        if data.startswith('reminder_time'):
+            handle_reminder_time(event, line_bot_api, data)
+        elif data.startswith('delete'):
+            handle_delete(event, line_bot_api, data)
+    except Exception as e:
+        logger.error(f"Error handling postback: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
 def handle_reminder_time(event, line_bot_api, data):
     try:
@@ -301,7 +309,8 @@ def handle_reminder_time(event, line_bot_api, data):
             TextSendMessage(text=f'提醒時間已更新為：{new_time}')
         )
     except Exception as e:
-        logging.error(f"Error in handle_reminder_time: {e}")
+        logger.error(f"Error in handle_reminder_time: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
 def handle_delete(event, line_bot_api, data):
     try:
@@ -312,5 +321,6 @@ def handle_delete(event, line_bot_api, data):
             TextSendMessage(text='事項已刪除')
         )
     except Exception as e:
-        logging.error(f"Error in handle_delete: {e}")
+        logger.error(f"Error in handle_delete: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 #===============to do list=============================================
