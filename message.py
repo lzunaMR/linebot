@@ -237,7 +237,9 @@ def send_datetime_picker(event, line_bot_api):
                             action=DatetimePickerAction(
                                 label='選擇日期時間',
                                 data='reminder_time',
-                                mode='datetime'
+                                mode='datetime',
+                                min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                max=None
                             )
                         )
                     ]
