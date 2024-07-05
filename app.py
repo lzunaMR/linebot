@@ -17,8 +17,11 @@ import mongodb_function as db
 #======這裡是呼叫的檔案內容=====
 
 #======python的函數庫==========
+from pymongo import MongoClient
+from bson import ObjectId
+from mongodb_function import get_tasks, update_remind_time, add_new_task
 import tempfile, os
-import datetime
+from datetime import datetime
 import time
 import logging
 #======python的函數庫==========
@@ -98,20 +101,20 @@ def handle_message(event):
             message = TextSendMessage(text='https://pay.halapla.net')
             line_bot_api.reply_message(event.reply_token, message)
         elif '記事情' in msg:
-            # 提示用户输入要记录的事项
+            # Prompt user to enter the task
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text='請輸入要記的事情：')
             )
-            # 记录用户正在输入事项的状态
-            db.collection.update_one(
+            # Update user state to input_task
+            collection.update_one(
                 {"user_id": user_id},
                 {"$set": {"state": "input_task"}},
                 upsert=True
             )
         elif '提醒事項' in msg:
-            # 查询用户的所有事项并返回
-            tasks = db.get_tasks(user_id)
+            # Retrieve and send all tasks for the user
+            tasks = get_tasks(user_id)
             if tasks:
                 task_messages = []
                 for task in tasks:
@@ -120,20 +123,20 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text='沒有提醒事項。'))
         else:
-            # 检查用户是否在输入任务的状态
-            user_state = db.collection.find_one({"user_id": user_id})
+            # Check if user is in input_task state
+            user_state = collection.find_one({"user_id": user_id})
             if user_state and user_state.get("state") == "input_task":
-                # 保存事项
-                db.add_new_task(user_id, msg, None)
-                task_id = str(db.collection.find_one({"user_id": user_id, "task": msg})['_id'])
+                # Save the task
+                add_new_task(user_id, msg, None)
+                task_id = str(collection.find_one({"user_id": user_id, "task": msg})['_id'])
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text='請選擇提醒時間：')
                 )
-                # 发送时间选择器
+                # Send datetime picker
                 send_datetime_picker(event, line_bot_api, task_id)
-                # 更新用户状态为选择提醒时间
-                db.collection.update_one(
+                # Update user state to choose_reminder_time
+                collection.update_one(
                     {"user_id": user_id},
                     {"$set": {"state": "choose_reminder_time"}},
                     upsert=True
@@ -144,6 +147,7 @@ def handle_message(event):
         logger.error(f"Error handling message: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
+# Postback handler for datetime picker
 @handler.add(PostbackEvent)
 def handle_postback(event):
     try:
@@ -154,6 +158,7 @@ def handle_postback(event):
         logger.error(f"Error handling postback: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
+# MemberJoinedEvent handler
 @handler.add(MemberJoinedEvent)
 def welcome(event):
     try:
@@ -167,10 +172,10 @@ def welcome(event):
         logger.error(f"Error welcoming new member: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
+# Function to send datetime picker
 def send_datetime_picker(event, line_bot_api, task_id):
     try:
         logger.info("Sending datetime picker")
-
         flex_message = FlexSendMessage(
             alt_text='選擇提醒時間',
             contents=BubbleContainer(
@@ -181,7 +186,7 @@ def send_datetime_picker(event, line_bot_api, task_id):
                         ButtonComponent(
                             action=DatetimePickerAction(
                                 label='選擇日期時間',
-                                data=f'reminder_time,{task_id}',  # 发送包含 task_id 的 data
+                                data=f'reminder_time,{task_id}',
                                 mode='datetime',
                                 min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
                                 max=None
@@ -196,39 +201,26 @@ def send_datetime_picker(event, line_bot_api, task_id):
         logger.error(f"Error in send_datetime_picker: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
+# Function to handle reminder time selection
 def handle_reminder_time(event, line_bot_api, data):
     try:
         logger.info(f"Received postback data: {data}")
-
-        # 确保 data 中包含两个部分: reminder_time 和 task_id
         if data.count(',') != 1:
             raise ValueError(f"Invalid data format for reminder_time: {data}")
-
-        # 解析数据
         _, task_id = data.split(',', 1)
-        
-        # 确保 task_id 是有效的 ObjectId
         if not ObjectId.is_valid(task_id):
             raise ValueError(f"Invalid task_id: {task_id}")
-
-        # 从 event.postback.params 中获取 new_time
         new_time = event.postback.params.get('datetime')
-        
         if not new_time:
             raise ValueError("New time is not provided in the callback params.")
-
         logger.info(f"Parsed task_id: {task_id}, new_time: {new_time}")
-
-        # 更新提醒时间
-        db.update_remind_time(task_id, new_time)
+        update_remind_time(task_id, new_time)
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=f'提醒時間已更新為：{new_time}')
         )
-        # 重置用户状态
-        user_id = event.source.user_id
-        db.collection.update_one(
-            {"user_id": user_id},
+        collection.update_one(
+            {"user_id": event.source.user_id},
             {"$set": {"state": "idle"}},
             upsert=True
         )

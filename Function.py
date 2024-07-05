@@ -12,9 +12,7 @@ import mongodb_function
 #1.建立旋轉木馬訊息，名為function_list(未來可以叫出此函數來使用)
 #function_list的括號內是設定此函數呼叫時需要給函數的參數有哪些
 #===============to do list=============================================
-def format_datetime(dt):
-    # Example function to format datetime
-    return dt.strftime('%Y-%m-%d %H:%M')
+
 #===============to do list=============================================
 
 def function_list():

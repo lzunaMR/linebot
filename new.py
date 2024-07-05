@@ -41,10 +41,5 @@ def test():
     )
     return message
 #===============to do list=============================================
-def add_new_task(user_id, task, remind_time):
-    mongodb_function.collection.insert_one({
-        'user_id': user_id,
-        'task': task,
-        'remind_time': remind_time
-    })
+
 #===============to do list=============================================
