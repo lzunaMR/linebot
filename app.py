@@ -33,7 +33,7 @@ def callback():
         abort(400)
     return 'OK'
 
-"""@handler.add(PostbackEvent)
+@handler.add(PostbackEvent)
 def handle_postback(event):
     if event.postback.data == 'reminder':
         remind_time = datetime.strptime(event.postback.params['datetime'], '%Y-%m-%dT%H:%M')
@@ -51,25 +51,8 @@ def handle_postback(event):
         if db.delete_task(task_id):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))"""
-
-@handler.add(PostbackEvent)
-def handle_postback(event):
-    if event.postback.data == 'reminder':
-        remind_time = datetime.strptime(event.postback.params['datetime'], '%Y-%m-%dT%H:%M')
-        logger.info(f'Reminder time selected: {remind_time}')
-        user_id = event.source.user_id
-        tasks = db.get_tasks(user_id)
-        last_task = tasks[-1] if tasks else None
-        if last_task:
-            db.update_remind_time(last_task['_id'], remind_time)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
-    elif event.postback.data.startswith('delete_task&'):
-        task_id = event.postback.data.split('&')[1]
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='成功刪除'))
-
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))
+            
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg = event.message.text
