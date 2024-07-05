@@ -127,7 +127,24 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text='沒有提醒事項。'))
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
+            # Handle the user's input after prompting to record a task
+            user_state = collection.find_one({"user_id": user_id})
+            if user_state and user_state.get("state") == "input_task":
+                # Record the task with remind_time as None initially
+                add_new_task(user_id, msg, None)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text='紀錄成功。您需要設定提醒功能嗎？')
+                )
+                # Update user state to ask_reminder
+                collection.update_one(
+                    {"user_id": user_id},
+                    {"$set": {"state": "ask_reminder"}},
+                    upsert=True
+                )
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
+    
     except Exception as e:
         logger.error(f"Error handling message: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
