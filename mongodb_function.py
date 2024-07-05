@@ -22,26 +22,12 @@ def get_tasks(user_id):
         return []
 
 # 更新提醒时间
-def update_remind_time(task_id, new_time):
+def update_remind_time(task_id, remind_time):
     try:
         collection = connect_to_mongodb()
-        # Convert remind_time to datetime object if it's not already
-        if not isinstance(new_time, datetime):
-            new_time = datetime.strptime(new_time, '%Y-%m-%dT%H:%M')
-        
-        # Update the document in MongoDB
-        result = collection.update_one(
-            {'_id': ObjectId(task_id)},
-            {'$set': {'remind_time': new_time, 'reminded': False}}  # 更新提醒时间和提醒状态
-        )
-        
-        if result.modified_count > 0:
-            return True
-        else:
-            return False
+        collection.update_one({'_id': task_id}, {'$set': {'remind_time': remind_time}})
     except Exception as e:
         print(f"Error updating remind time: {e}")
-        return False
     
 def update_reminded_status(task_id):
     try:
@@ -120,19 +106,22 @@ def get_task_by_id(task_id):
             remindable_tasks.append(task)
     return remindable_tasks"""
 
-def get_remindable_tasks(user_id):
+def get_remindable_tasks():
     current_time = datetime.now()
-    tasks = db.get_tasks(user_id)  # 使用您的資料庫操作獲取所有任務
-    remindable_tasks = []
-    
-    for task in tasks:
-        remind_time = task.get('remind_time')
-        if remind_time:
-            logger.info(f'Task: {task["_id"]}, Remind time: {remind_time}, Current time: {current_time}')
-            if remind_time <= current_time:
-                remindable_tasks.append(task)
-    
-    return remindable_tasks
+    try:
+        collection = connect_to_mongodb()
+        remindable_tasks = list(collection.find({'remind_time': {'$lte': current_time}, 'reminded': False}))
+        return remindable_tasks
+    except Exception as e:
+        print(f"Error getting remindable tasks: {e}")
+        return []
+
+def mark_task_as_reminded(task_id):
+    try:
+        collection = connect_to_mongodb()
+        collection.update_one({'_id': task_id}, {'$set': {'reminded': True}})
+    except Exception as e:
+        print(f"Error marking task as reminded: {e}")
 
 # 启动后台提醒任务的线程
 if __name__ == "__main__":
