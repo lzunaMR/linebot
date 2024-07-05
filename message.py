@@ -212,28 +212,58 @@ def image_carousel_message1():
     return message
 
 #===============to do list=============================================
-
-def handle_message(event, line_bot_api):
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    msg = event.message.text
     user_id = event.source.user_id
-    message_text = event.message.text
 
-    logger.info(f"Received message: {message_text}")
+    if msg == '記事情':
+        # 提示用户输入要记录的事项
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text='請輸入要記的事情：')
+        )
+        # 记录用户正在输入事项的状态
+        db.update_one(
+            {"user_id": user_id},
+            {"$set": {"state": "input_task"}},
+            upsert=True
+        )
+    elif '提醒事項' in msg:
+        # 查询用户的所有事项并返回
+        tasks = db.find_many({"user_id": user_id})
+        if tasks:
+            task_messages = []
+            for task in tasks:
+                task_messages.append(TextSendMessage(text=f"事项: {task['task']}, 提醒时间: {task['reminder_time']}"))
+            line_bot_api.reply_message(event.reply_token, task_messages)
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='沒有提醒事項。'))
+    else:
+        # 检查用户是否在输入任务的状态
+        user_state = db.find_one({"user_id": user_id})
+        if user_state and user_state.get("state") == "input_task":
+            # 保存事项
+            task_id = db.insert_one({"user_id": user_id, "task": msg, "reminder_time": None}).inserted_id
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text='請選擇提醒時間：')
+            )
+            # 发送时间选择器
+            send_datetime_picker(event, line_bot_api, str(task_id))
+            # 更新用户状态为选择提醒时间
+            db.update_one(
+                {"user_id": user_id},
+                {"$set": {"state": "choose_reminder_time"}},
+                upsert=True
+            )
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
-    if message_text == '記事情':
-        logger.info("Handling '記事情'")
-        send_datetime_picker(event, line_bot_api)
-    elif message_text == '提醒事項':
-        logger.info("Handling '提醒事項'")
-        send_to_do_list(event, line_bot_api, user_id)
 
-
-
-def send_datetime_picker(event, line_bot_api):
+def send_datetime_picker(event, line_bot_api, task_id):
     try:
         logger.info("Sending datetime picker")
-
-        # 假设 task_id 是从数据库中获取的有效 ObjectId
-        task_id = str(ObjectId())  # 这里应替换为实际的task_id
 
         flex_message = FlexSendMessage(
             alt_text='選擇提醒時間',
@@ -247,7 +277,7 @@ def send_datetime_picker(event, line_bot_api):
                                 label='選擇日期時間',
                                 data=f'reminder_time,{task_id}',  # 发送包含 task_id 的 data
                                 mode='datetime',
-                                min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                min=datetime.datetime.now().strftime('%Y-%m-%dT%H:%M'),
                                 max=None
                             )
                         )
@@ -337,6 +367,13 @@ def handle_reminder_time(event, line_bot_api, data):
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=f'提醒時間已更新為：{new_time}')
+        )
+        # 重置用户状态
+        user_id = event.source.user_id
+        db.update_one(
+            {"user_id": user_id},
+            {"$set": {"state": "idle"}},
+            upsert=True
         )
     except ValueError as ve:
         logger.error(f"ValueError in handle_reminder_time: {ve}")
