@@ -13,111 +13,68 @@ def connect_to_mongodb():
 
 # 获取用户的所有任务
 def get_tasks(user_id):
-    collection = connect_to_mongodb()
-    return list(collection.find({'user_id': user_id}))
+    try:
+        collection = connect_to_mongodb()
+        return list(collection.find({'user_id': user_id}))
+    except Exception as e:
+        print(f"Error getting tasks: {e}")
+        return []
 
 # 更新提醒时间
 def update_remind_time(task_id, new_time):
-    collection = connect_to_mongodb()
-    collection.update_one(
-        {'_id': ObjectId(task_id)},
-        {'$set': {'remind_time': new_time}}
-    )
+    try:
+        collection = connect_to_mongodb()
+        collection.update_one(
+            {'_id': ObjectId(task_id)},
+            {'$set': {'remind_time': new_time}}
+        )
+    except Exception as e:
+        print(f"Error updating remind time: {e}")
 
 # 添加新任务
 def add_new_task(user_id, task, remind_time):
-    collection = connect_to_mongodb()
-    collection.insert_one({
-        'user_id': user_id,
-        'task': task,
-        'remind_time': remind_time
-    })
+    try:
+        collection = connect_to_mongodb()
+        collection.insert_one({
+            'user_id': user_id,
+            'task': task,
+            'remind_time': remind_time,
+            'reminded': False
+        })
+    except Exception as e:
+        print(f"Error adding new task: {e}")
 
 # 删除任务
 def delete_task(task_id):
-    collection = connect_to_mongodb()
-    collection.delete_one({'_id': ObjectId(task_id)})
+    try:
+        collection = connect_to_mongodb()
+        collection.delete_one({'_id': ObjectId(task_id)})
+    except Exception as e:
+        print(f"Error deleting task: {e}")
 
-# 其他操作函数可以根据需求进行添加
-
-# 示例：获取所有任务的数量
+# 获取所有任务的数量
 def get_task_count():
-    collection = connect_to_mongodb()
-    return collection.count_documents({})
+    try:
+        collection = connect_to_mongodb()
+        return collection.count_documents({})
+    except Exception as e:
+        print(f"Error getting task count: {e}")
+        return 0
 
-# 示例：获取所有用户的任务
+# 获取所有用户的任务
 def get_all_tasks():
-    collection = connect_to_mongodb()
-    return list(collection.find())
+    try:
+        collection = connect_to_mongodb()
+        return list(collection.find())
+    except Exception as e:
+        print(f"Error getting all tasks: {e}")
+        return []
 
-# 示例：根据任务ID获取任务详情
+# 根据任务ID获取任务详情
 def get_task_by_id(task_id):
-    collection = connect_to_mongodb()
-    return collection.find_one({'_id': ObjectId(task_id)})
-#===============to do list=============================================
-
-"""#判斷key是否在指定的dictionary當中，若有則return True
-def dicMemberCheck(key, dicObj):
-    if key in dicObj:
-        return True
-    else:
-        return False
-
-#寫入資料data是dictionary
-def write_one_data(data):
-    col.insert_one(data)
-
-#寫入多筆資料，data是一個由dictionary組成的list
-def write_many_datas(data):
-    col.insert_many(data)
-
-#讀取所有LINE的webhook event紀錄資料
-def read_many_datas():
-    data_list = []
-    for data in col.find():
-        data_list.append(str(data))
-
-    print(data_list)
-    return data_list
-
-#讀取LINE的對話紀錄資料
-def read_chat_records():
-    data_list = []
-    for data in col.find():
-        if dicMemberCheck('events',data):
-            if dicMemberCheck('message',data['events'][0]):
-                if dicMemberCheck('text',data['events'][0]['message']):
-                    print(data['events'][0]['message']['text'])
-                    data_list.append(data['events'][0]['message']['text'])
-        else:
-            print('非LINE訊息',data)
-
-    print(data_list)
-    return data_list
-
-#刪除所有資料
-def delete_all_data():
-    data_list = []
-    for x in col.find():
-        data_list.append(x)   
-
-    datas_len = len(data_list)
-
-    col.delete_many({})
-
-    if len(data_list)!=0:
-        return f"資料刪除完畢，共{datas_len}筆"
-    else:
-        return "資料刪除出錯"
-
-#找到最新的一筆資料
-def col_find(key):
-    for data in col.find({}).sort('_id',-1):
-        if dicMemberCheck(key,data):
-            data = data[key]
-            break
-    print(data)
-    return data"""
-
-"""if __name__ == '__main__':
-    print(read_many_datas())"""
+    try:
+        collection = connect_to_mongodb()
+        return collection.find_one({'_id': ObjectId(task_id)})
+    except Exception as e:
+        print(f"Error getting task by ID: {e}")
+        return None
