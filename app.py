@@ -10,7 +10,7 @@ from linebot.models import *
 
 
 #======這裡是呼叫的檔案內容=====
-import message as msg_moudle
+import message as msg_module
 from new import *
 from Function import *
 import mongodb_function as db
