@@ -3,6 +3,7 @@ from linebot.models import *
 import mongodb_function as db
 import logging
 from datetime import datetime
+from bson import ObjectId  # 确保导入ObjectId
 logger = logging.getLogger(__name__)
 #ImagemapSendMessage(組圖訊息)
 def imagemap_message():
@@ -225,12 +226,14 @@ def handle_message(event, line_bot_api):
         logger.info("Handling '提醒事項'")
         send_to_do_list(event, line_bot_api, user_id)
 
+
+
 def send_datetime_picker(event, line_bot_api):
     try:
         logger.info("Sending datetime picker")
 
-        # 为了简单起见，这里假设 task_id 是固定的或从某处获取
-        task_id = "dummy_task_id"  # 这里应该替换为实际的 task_id
+        # 假设 task_id 是从数据库中获取的有效 ObjectId
+        task_id = str(ObjectId())  # 这里应替换为实际的task_id
 
         flex_message = FlexSendMessage(
             alt_text='選擇提醒時間',
@@ -317,6 +320,10 @@ def handle_reminder_time(event, line_bot_api, data):
         # 解析数据
         _, task_id = data.split(',', 1)
         
+        # 确保 task_id 是有效的 ObjectId
+        if not ObjectId.is_valid(task_id):
+            raise ValueError(f"Invalid task_id: {task_id}")
+
         # 从 event.postback.params 中获取 new_time
         new_time = event.postback.params.get('datetime')
         
