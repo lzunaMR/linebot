@@ -53,6 +53,10 @@ line_bot_api = LineBotApi('GPFEdFRLgM9XvgeoTS16R6c/JJ+RCsAn1DkmU6etLml1g+HE7tPJo
 # Channel Secret
 handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
 
+client = MongoClient("mongodb+srv://789william:123Vanoss@cluster0.binj4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+db = client['MongoClient']
+collection = db['to_do_list']
+
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
