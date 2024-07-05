@@ -25,7 +25,6 @@ def get_tasks(user_id):
 def update_remind_time(task_id, new_time):
     try:
         collection = connect_to_mongodb()
-        
         # Convert remind_time to datetime object if it's not already
         if not isinstance(new_time, datetime):
             new_time = datetime.strptime(new_time, '%Y-%m-%dT%H:%M')
@@ -33,7 +32,7 @@ def update_remind_time(task_id, new_time):
         # Update the document in MongoDB
         result = collection.update_one(
             {'_id': ObjectId(task_id)},
-            {'$set': {'remind_time': new_time}}
+            {'$set': {'remind_time': new_time, 'reminded': False}}  # 更新提醒时间和提醒状态
         )
         
         if result.modified_count > 0:
@@ -42,6 +41,24 @@ def update_remind_time(task_id, new_time):
             return False
     except Exception as e:
         print(f"Error updating remind time: {e}")
+        return False
+    
+def update_reminded_status(task_id):
+    try:
+        collection = connect_to_mongodb()
+        
+        # Update the document in MongoDB
+        result = collection.update_one(
+            {'_id': ObjectId(task_id)},
+            {'$set': {'reminded': True}}  # 更新提醒状态为已提醒
+        )
+        
+        if result.modified_count > 0:
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Error updating reminded status: {e}")
         return False
 
 # 添加新任务
@@ -91,3 +108,28 @@ def get_task_by_id(task_id):
     except Exception as e:
         print(f"Error getting task by ID: {e}")
         return None
+
+def send_reminder_messages():
+    while True:
+        now = datetime.now()
+        collection = connect_to_mongodb()
+        tasks = list(collection.find({'remind_time': {'$lte': now}, 'reminded': False}))
+        
+        for task in tasks:
+            task_id = task['_id']
+            user_id = task['user_id']
+            task_text = task['task']
+            
+            # 发送提醒消息给用户
+            # 这里可以调用 Line Bot API 发送提醒消息
+            print(f"Reminder sent for task: {task_text} to user: {user_id}")
+            
+            # 更新提醒状态为已提醒
+            collection.update_one({'_id': task_id}, {'$set': {'reminded': True}})
+        
+        time.sleep(60)  # 每分钟检查一次
+
+# 启动后台提醒任务的线程
+if __name__ == "__main__":
+    reminder_thread = threading.Thread(target=send_reminder_messages)
+    reminder_thread.start()
