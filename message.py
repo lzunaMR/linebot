@@ -299,8 +299,11 @@ def handle_postback(event, line_bot_api):
 
 def handle_reminder_time(event, line_bot_api, data):
     try:
-        task_data = data.split('=')[1]
-        task_id, new_time = task_data.split(',')
+        task_data = data.split('=')[1]  # 假设数据格式为 reminder_time=<task_id>,<new_time>
+        if ',' not in task_data:
+            raise ValueError("Invalid data format for reminder_time")
+        
+        task_id, new_time = task_data.split(',', 1)
 
         db.update_remind_time(task_id, new_time)
         line_bot_api.reply_message(
@@ -322,5 +325,3 @@ def handle_delete(event, line_bot_api, data):
     except Exception as e:
         logger.error(f"Error in handle_delete: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
-
-#===============to do list=============================================
