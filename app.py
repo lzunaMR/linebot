@@ -36,16 +36,20 @@ def callback():
 @handler.add(PostbackEvent)
 def handle_postback(event):
     if event.postback.data == 'reminder':
-        remind_time = datetime.strptime(event.postback.params['datetime'], '%Y-%m-%dT%H:%M')
-        logger.info(f'Reminder time selected: {remind_time}')
-        user_id = event.source.user_id
-        tasks = db.get_tasks(user_id)
-        last_task = tasks[-1] if tasks else None
-        if last_task:
-            db.update_remind_time(last_task['_id'], remind_time)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
+        try:
+            remind_time = datetime.strptime(event.postback.params['datetime'], '%Y-%m-%dT%H:%M')
+            logger.info(f'Reminder time selected: {remind_time}')
+            user_id = event.source.user_id
+            tasks = db.get_tasks(user_id)
+            last_task = tasks[-1] if tasks else None
+            if last_task:
+                db.update_remind_time(last_task['_id'], remind_time)
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
+            else:
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
+        except Exception as e:
+            logger.error(f"Error handling postback: {e}")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='處理提醒時間時發生錯誤。'))
 
 
 @handler.add(MessageEvent, message=TextMessage)
@@ -79,12 +83,13 @@ def handle_message(event):
         message = TextSendMessage(text='https://pay.halapla.net')
         line_bot_api.reply_message(event.reply_token, message)
     elif '所有記錄事項' in msg:
-        tasks = db.get_all_tasks(user_id)
+        tasks = db.get_tasks(user_id)
         if tasks:
-            task_list = "\n".join([f"{task['_id']}: {task.get('task', '未知任務')}" for task in tasks])
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=task_list))
+            task_list = "\n".join([f"{task['_id']}: {task['task']}" for task in tasks])
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'所有記錄事項:\n{task_list}'))
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='沒有找到任何記錄的事項。'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='您目前沒有任何記錄事項。'))
+        return
     elif '記錄事項' in msg:
         task = msg.replace('記錄事項', '').strip()
         if task:
