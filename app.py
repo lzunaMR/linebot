@@ -126,7 +126,7 @@ def handle_message(event):
                 event.reply_token,
                 TextSendMessage(text='請輸入要記的事情：')
             )
-            collection.update_one(
+            db.connect_to_mongodb().update_one(
                 {"user_id": user_id},
                 {"$set": {"state": "input_task"}},
                 upsert=True
@@ -141,14 +141,14 @@ def handle_message(event):
             else:
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text='沒有提醒事項。'))
         else:
-            user_state = collection.find_one({"user_id": user_id})
+            user_state = db.connect_to_mongodb().find_one({"user_id": user_id})
             if user_state and user_state.get("state") == "input_task":
                 db.add_new_task(user_id, msg, None)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text='紀錄成功。您需要設定提醒功能嗎？(請回答 是 或 否)')
                 )
-                collection.update_one(
+                db.connect_to_mongodb().update_one(
                     {"user_id": user_id},
                     {"$set": {"state": "ask_reminder", "last_task": msg}},
                     upsert=True
@@ -173,14 +173,14 @@ def handle_message(event):
                         )
                     )
                     line_bot_api.reply_message(event.reply_token, date_picker)
-                    collection.update_one(
+                    db.connect_to_mongodb().update_one(
                         {"user_id": user_id},
                         {"$set": {"state": "set_reminder"}},
                         upsert=True
                     )
                 else:
                     line_bot_api.reply_message(event.reply_token, TextSendMessage(text='好的，沒有設定提醒功能。'))
-                    collection.update_one(
+                    db.connect_to_mongodb().update_one(
                         {"user_id": user_id},
                         {"$set": {"state": "normal"}},
                         upsert=True
@@ -199,17 +199,17 @@ def handle_postback(event):
 
     if data == 'reminder_time':
         remind_time = event.postback.params['datetime']
-        user_state = collection.find_one({"user_id": user_id})
+        user_state = db.connect_to_mongodb().find_one({"user_id": user_id})
         if user_state and user_state.get("state") == "set_reminder":
             last_task = user_state.get("last_task")
-            last_task_doc = collection.find_one({"user_id": user_id, "task": last_task})
+            last_task_doc = db.connect_to_mongodb().find_one({"user_id": user_id, "task": last_task})
             if last_task_doc:
                 db.update_remind_time(last_task_doc["_id"], remind_time)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text=f'提醒時間設定成功：{remind_time}')
                 )
-                collection.update_one(
+                db.connect_to_mongodb().update_one(
                     {"user_id": user_id},
                     {"$set": {"state": "normal"}},
                     upsert=True
