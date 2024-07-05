@@ -305,9 +305,9 @@ def handle_reminder_time(event, line_bot_api, data):
     try:
         logger.info(f"Received postback data: {data}")
 
-        # 假设数据格式为 reminder_time=<task_id>,<new_time>
+        # 检查并记录data的实际内容
         if ',' not in data:
-            raise ValueError("Invalid data format for reminder_time")
+            raise ValueError(f"Invalid data format for reminder_time: {data}")
 
         # 解析数据
         task_id, new_time = data.split(',', 1)
