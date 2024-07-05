@@ -51,7 +51,6 @@ def callback():
     signature = request.headers['X-Line-Signature']
     # get request body as text
     body = request.get_data(as_text=True)
-    write_one_data(eval(body.replace('false','False')))
     app.logger.info("Request body: " + body)
     # handle webhook body
     try:
@@ -64,6 +63,8 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg = event.message.text
+    user_id = event.source.user_id
+    
     if '最新合作廠商' in msg:
         message = imagemap_message()
         line_bot_api.reply_message(event.reply_token, message)
@@ -83,50 +84,23 @@ def handle_message(event):
         message = function_list()
         line_bot_api.reply_message(event.reply_token, message)
     elif '課表' in msg:
-        image_path='https://github.com/lzunaMR/linebot/blob/master/static/tmp/IMG_2274.jpg?raw=true'
-        message=ImageSendMessage(original_content_url=image_path,preview_image_url=image_path)
+        image_path = 'https://github.com/lzunaMR/linebot/blob/master/static/tmp/IMG_2274.jpg?raw=true'
+        message = ImageSendMessage(original_content_url=image_path, preview_image_url=image_path)
         line_bot_api.reply_message(event.reply_token, message)
     elif '哈拉' in msg:
-        message=TextSendMessage(text='https://pay.halapla.net')
+        message = TextSendMessage(text='https://pay.halapla.net')
         line_bot_api.reply_message(event.reply_token, message)
+    elif '記事情' in msg:
+        message.send_datetime_picker(event, line_bot_api)
+    elif '提醒事項' in msg:
+        message.send_to_do_list(event, line_bot_api, user_id)
     else:
         message = TextSendMessage(text=msg)
         line_bot_api.reply_message(event.reply_token, message)
-    """elif '@讀取' in msg:
-        datas = read_many_datas()
-        datas_len = len(datas)
-        message = TextSendMessage(text=f'資料數量，一共{datas_len}條')
-        line_bot_api.reply_message(event.reply_token, message)
-
-    elif '@查詢' in msg:
-        datas = col_find('events')
-        message = TextSendMessage(text=str(datas))
-        line_bot_api.reply_message(event.reply_token, message)
-
-    elif '@對話紀錄' in msg:
-        datas = read_chat_records()
-        print(type(datas))
-        n = 0
-        text_list = []
-        for data in datas:
-            if '@' in data:
-                continue
-            else:
-                text_list.append(data)
-            n+=1
-        data_text = '\n'.join(text_list)
-        message = TextSendMessage(text=data_text[:5000])
-        line_bot_api.reply_message(event.reply_token, message)
-
-    elif '@刪除' in msg:
-        text = delete_all_data()
-        message = TextSendMessage(text=text)
-        line_bot_api.reply_message(event.reply_token, message)"""
 
 @handler.add(PostbackEvent)
-def handle_message(event):
-    print(event.postback.data)
-
+def handle_postback(event):
+    message.handle_postback(event, line_bot_api)
 
 @handler.add(MemberJoinedEvent)
 def welcome(event):
@@ -136,9 +110,7 @@ def welcome(event):
     name = profile.display_name
     message = TextSendMessage(text=f'{name}歡迎加入')
     line_bot_api.reply_message(event.reply_token, message)
-        
-        
-import os
+
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
