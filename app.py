@@ -22,11 +22,11 @@ import datetime
 import time
 #======python的函數庫==========
 #======讓render不會睡著======
-import threading 
+"""import threading 
 import requests
 def wake_up_heroku():
     while 1==1:
-        url = 'https://linebot-2os5.onrender.com' + 'heroku_wake_up'
+        url = 'https://linebot-2os5.onrender.com/' + 'heroku_wake_up'
         res = requests.get(url)
         if res.status_code==200:
             print('喚醒render成功')
@@ -34,7 +34,7 @@ def wake_up_heroku():
             print('喚醒失敗')
         time.sleep(28*60)
 
-threading.Thread(target=wake_up_heroku).start()
+threading.Thread(target=wake_up_heroku).start()"""
 #======讓heroku不會睡著======
 
 app = Flask(__name__,static_folder='./static/tmp', static_url_path='/images')
