@@ -240,24 +240,21 @@ def handle_message(event, line_bot_api):
                 # 保存任務
                 db.add_new_task(user_id, msg, None)
                 task_id = str(db.collection.find_one({"user_id": user_id, "task": msg})['_id'])
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text='請選擇提醒時間：')
-                )
-                # 發送時間選擇器
-                send_datetime_picker(event, line_bot_api, task_id)
                 # 更新用戶狀態為選擇提醒時間
                 db.collection.update_one(
                     {"user_id": user_id},
                     {"$set": {"state": "choose_reminder_time"}},
                     upsert=True
                 )
+                # 發送時間選擇器
+                send_datetime_picker(event, line_bot_api, task_id)
             else:
                 # 如果不是輸入任務的狀態，則回覆收到的消息
                 line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
     except Exception as e:
         logger.error(f"處理消息時發生錯誤: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
+
 
 def send_datetime_picker(event, line_bot_api, task_id):
     try:
