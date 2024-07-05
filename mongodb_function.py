@@ -2,16 +2,38 @@
 # 要獲得mongodb網址，請至mongodb網站申請帳號進行資料庫建立，網址　https://www.mongodb.com/
 # 獲取的網址方法之範例如圖： https://i.imgur.com/HLCk99r.png
 from pymongo.mongo_client import MongoClient
+from bson import ObjectId
 uri = "mongodb+srv://789william:123Vanoss@cluster0.binj4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 # Create a new client and connect to the server
-client = MongoClient(uri,)
+client = MongoClient(uri)
 
 
 #第一個db的建立
 db = client['MongoClient']
-col = db['Database']
+collection = db['Database']
+#===============to do list=============================================
+collection = db['to_do_list']
+def get_tasks(user_id):
+    return list(collection.find({'user_id': user_id}))
 
-#判斷key是否在指定的dictionary當中，若有則return True
+def update_remind_time(task_id, new_time):
+    collection.update_one(
+        {'_id': ObjectId(task_id)},
+        {'$set': {'remind_time': new_time}}
+    )
+
+def delete_task(task_id):
+    collection.delete_one({'_id': ObjectId(task_id)})
+
+def add_new_task(user_id, task, remind_time):
+    collection.insert_one({
+        'user_id': user_id,
+        'task': task,
+        'remind_time': remind_time
+    })
+#===============to do list=============================================
+
+"""#判斷key是否在指定的dictionary當中，若有則return True
 def dicMemberCheck(key, dicObj):
     if key in dicObj:
         return True
@@ -72,7 +94,7 @@ def col_find(key):
             data = data[key]
             break
     print(data)
-    return data
+    return data"""
 
-if __name__ == '__main__':
-    print(read_many_datas())
+#if __name__ == '__main__':
+ #   print(read_many_datas())

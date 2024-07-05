@@ -1,6 +1,6 @@
 #這些是LINE官方開放的套件組合透過import來套用這個檔案上
 from linebot.models import *
-
+import mongodb_function
 #ImagemapSendMessage(組圖訊息)
 def imagemap_message():
     message = ImagemapSendMessage(
@@ -206,3 +206,92 @@ def image_carousel_message1():
         )
     )
     return message
+
+#===============to do list=============================================
+def handle_message(event, line_bot_api):
+    user_id = event.source.user_id
+    message_text = event.message.text
+
+    if message_text == '記事情':
+        send_datetime_picker(event, line_bot_api)
+    elif message_text == '提醒事項':
+        send_to_do_list(event, line_bot_api, user_id)
+
+def send_datetime_picker(event, line_bot_api):
+    flex_message = FlexSendMessage(
+        alt_text='選擇提醒時間',
+        contents=BubbleContainer(
+            body=BoxComponent(
+                layout='vertical',
+                contents=[
+                    TextComponent(text='請選擇提醒時間：'),
+                    ButtonComponent(
+                        action=DatetimePickerAction(
+                            label='選擇日期時間',
+                            data='reminder_time',
+                            mode='datetime'
+                        )
+                    )
+                ]
+            )
+        )
+    )
+    line_bot_api.reply_message(event.reply_token, flex_message)
+
+def send_to_do_list(event, line_bot_api, user_id):
+    tasks = mongodb_function.get_tasks(user_id)
+    contents = []
+    for task in tasks:
+        task_id = str(task['_id'])
+        task_text = f"{task['task']} - {task['remind_time']}"
+        contents.append(
+            BubbleContainer(
+                body=BoxComponent(
+                    layout='vertical',
+                    contents=[
+                        TextComponent(text=task_text),
+                        ButtonComponent(
+                            action=URIAction(label='修改', uri=f'line://app/{task_id}/edit')
+                        ),
+                        ButtonComponent(
+                            action=URIAction(label='刪除', uri=f'line://app/{task_id}/delete')
+                        )
+                    ]
+                )
+            )
+        )
+    flex_message = FlexSendMessage(
+        alt_text='提醒事項列表',
+        contents={
+            'type': 'carousel',
+            'contents': contents
+        }
+    )
+    line_bot_api.reply_message(event.reply_token, flex_message)
+
+def handle_postback(event, line_bot_api):
+    data = event.postback.data
+
+    if data.startswith('reminder_time'):
+        handle_reminder_time(event, line_bot_api, data)
+    elif data.startswith('delete'):
+        handle_delete(event, line_bot_api, data)
+
+def handle_reminder_time(event, line_bot_api, data):
+    task_data = data.split('=')[1]
+    task_id, new_time = task_data.split(',')
+
+    mongodb_function.update_remind_time(task_id, new_time)
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=f'提醒時間已更新為：{new_time}')
+    )
+
+def handle_delete(event, line_bot_api, data):
+    task_id = data.split('=')[1]
+    mongodb_function.delete_task(task_id)
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text='事項已刪除')
+    )
+#===============to do list=============================================

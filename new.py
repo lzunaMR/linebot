@@ -2,7 +2,7 @@
 from linebot import (LineBotApi, WebhookHandler)
 from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import *
-
+import mongodb_function
 def test():
     message = TemplateSendMessage(
         alt_text='圖片旋轉木馬',
@@ -40,3 +40,11 @@ def test():
         )
     )
     return message
+#===============to do list=============================================
+def add_new_task(user_id, task, remind_time):
+    mongodb_function.collection.insert_one({
+        'user_id': user_id,
+        'task': task,
+        'remind_time': remind_time
+    })
+#===============to do list=============================================
