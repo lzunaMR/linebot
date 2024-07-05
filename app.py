@@ -115,21 +115,15 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, datetime_picker_template)
     elif '提醒時間' in msg:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請使用選擇時間的方式來設定提醒時間。'))
+    elif '所有記錄事項' in msg:
+        tasks = db.get_all_tasks()
+        if tasks:
+            task_list = "\n".join([f"{task['_id']}: {task['task']}" for task in tasks])
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'所有記錄事項:\n{task_list}'))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='目前沒有任何記錄事項。'))
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
-   
-
-def send_reminder_messages():
-    while True:
-        now = datetime.now()
-        tasks = db.get_all_tasks()
-        for task in tasks:
-            if task['remind_time'] and not task.get('reminded', False):
-                remind_time = task['remind_time']
-                if remind_time <= now:
-                    line_bot_api.push_message(task['user_id'], TextSendMessage(text=f'提醒: {task["task"]}'))
-                    db.update_remind_time(task['_id'], True)  # 更新提醒狀態為已提醒
-        time.sleep(60)  # 每分鐘檢查一次
 
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=send_reminder_messages)
