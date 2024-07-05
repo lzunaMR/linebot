@@ -229,8 +229,8 @@ def send_datetime_picker(event, line_bot_api):
     try:
         logger.info("Sending datetime picker")
 
-        # 为了简单起见，这里假设task_id是固定的或从某处获取
-        task_id = "dummy_task_id"  # 这里应该替换为实际的task_id
+        # 为了简单起见，这里假设 task_id 是固定的或从某处获取
+        task_id = "dummy_task_id"  # 这里应该替换为实际的 task_id
 
         flex_message = FlexSendMessage(
             alt_text='選擇提醒時間',
@@ -242,7 +242,7 @@ def send_datetime_picker(event, line_bot_api):
                         ButtonComponent(
                             action=DatetimePickerAction(
                                 label='選擇日期時間',
-                                data=f'reminder_time,{task_id}',  # 发送包含task_id的data
+                                data=f'reminder_time,{task_id}',  # 发送包含 task_id 的 data
                                 mode='datetime',
                                 min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
                                 max=None
@@ -256,6 +256,7 @@ def send_datetime_picker(event, line_bot_api):
     except Exception as e:
         logger.error(f"Error in send_datetime_picker: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
+
 
 def send_to_do_list(event, line_bot_api, user_id):
     try:
@@ -309,13 +310,19 @@ def handle_reminder_time(event, line_bot_api, data):
     try:
         logger.info(f"Received postback data: {data}")
 
-        # 确保data中包含三个部分: reminder_time, task_id, new_time
-        if data.count(',') != 2:
+        # 确保 data 中包含两个部分: reminder_time 和 task_id
+        if data.count(',') != 1:
             raise ValueError(f"Invalid data format for reminder_time: {data}")
 
         # 解析数据
-        _, task_id, new_time = data.split(',', 2)
+        _, task_id = data.split(',', 1)
         
+        # 从 event.postback.params 中获取 new_time
+        new_time = event.postback.params.get('datetime')
+        
+        if not new_time:
+            raise ValueError("New time is not provided in the callback params.")
+
         logger.info(f"Parsed task_id: {task_id}, new_time: {new_time}")
 
         # 更新提醒时间
