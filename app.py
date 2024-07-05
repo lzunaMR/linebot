@@ -33,6 +33,21 @@ def callback():
         abort(400)
     return 'OK'
 
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    if event.postback.data == 'reminder':
+        remind_time = datetime.strptime(event.postback.params['datetime'], '%Y-%m-%dT%H:%M')
+        logger.info(f'Reminder time selected: {remind_time}')
+        user_id = event.source.user_id
+        tasks = db.get_tasks(user_id)
+        last_task = tasks[-1] if tasks else None
+        if last_task:
+            db.update_remind_time(last_task['_id'], remind_time)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
+
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg = event.message.text
@@ -99,17 +114,10 @@ def handle_message(event):
         )
         line_bot_api.reply_message(event.reply_token, datetime_picker_template)
     elif '提醒時間' in msg:
-        remind_time = datetime.strptime(msg.split('提醒時間 ')[-1], '%Y-%m-%dT%H:%M')
-        logger.info(f'Reminder time selected: {remind_time}')
-        tasks = db.get_tasks(user_id)
-        last_task = tasks[-1] if tasks else None
-        if last_task:
-            db.update_remind_time(last_task['_id'], remind_time)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請使用選擇時間的方式來設定提醒時間。'))
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
+   
 
 def send_reminder_messages():
     while True:
