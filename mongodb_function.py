@@ -23,13 +23,23 @@ def get_tasks(user_id):
 # 更新提醒时间
 def update_remind_time(task_id, new_time):
     try:
-        collection = connect_to_mongodb()
-        collection.update_one(
-            {'_id': ObjectId(task_id)},
-            {'$set': {'remind_time': new_time}}
+        # Convert remind_time to datetime object if it's not already
+        if not isinstance(remind_time, datetime):
+            remind_time = datetime.strptime(remind_time, '%Y-%m-%dT%H:%M')
+        
+        # Update the document in MongoDB
+        result = collection.update_one(
+            {'_id': task_id},
+            {'$set': {'remind_time': remind_time}}
         )
+        
+        if result.modified_count > 0:
+            return True
+        else:
+            return False
     except Exception as e:
         print(f"Error updating remind time: {e}")
+        return False
 
 # 添加新任务
 def add_new_task(user_id, task, remind_time):
