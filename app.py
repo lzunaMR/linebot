@@ -202,16 +202,18 @@ def handle_postback(event):
         user_state = collection.find_one({"user_id": user_id})
         if user_state and user_state.get("state") == "set_reminder":
             last_task = user_state.get("last_task")
-            db.update_remind_time(last_task, remind_time)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=f'提醒時間設定成功：{remind_time}')
-            )
-            collection.update_one(
-                {"user_id": user_id},
-                {"$set": {"state": "normal"}},
-                upsert=True
-            )
+            last_task_doc = collection.find_one({"user_id": user_id, "task": last_task})
+            if last_task_doc:
+                db.update_remind_time(last_task_doc["_id"], remind_time)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=f'提醒時間設定成功：{remind_time}')
+                )
+                collection.update_one(
+                    {"user_id": user_id},
+                    {"$set": {"state": "normal"}},
+                    upsert=True
+                )
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
