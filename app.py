@@ -33,61 +33,20 @@ def callback():
         abort(400)
     return 'OK'
 
-# 產生用於編輯任務的按鈕
-def generate_task_buttons(tasks):
-    buttons = []
-    for task in tasks:
-        button = PostbackAction(
-            label=task['task'],
-            data=f"edit_task_{task['_id']}"
-        )
-        buttons.append(button)
-    return buttons
-
-# 顯示所有任務的函式
-def display_all_tasks(event):
-    user_id = event.source.user_id
-    tasks = db.get_tasks(user_id)  # 從資料庫取得使用者所有任務
-    if tasks:
-        task_buttons = generate_task_buttons(tasks)
-        message = TemplateSendMessage(
-            alt_text='所有任務',
-            template=ButtonsTemplate(
-                title='所有任務',
-                text='請選擇要編輯或刪除的任務：',
-                actions=task_buttons
-            )
-        )
-        line_bot_api.reply_message(event.reply_token, message)
-    else:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='找不到任何任務。'))
-
-# 處理編輯任務細節的功能
 @handler.add(PostbackEvent)
-def handle_edit_task(event):
-    user_id = event.source.user_id
-    if event.postback.data.startswith('edit_task_details_'):
-        task_id = event.postback.data.split('_')[-1]
-        # 實作提示用戶輸入新的任務細節並更新資料庫的邏輯
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請輸入更新後的任務細節。'))
+def handle_postback(event):
+    if event.postback.data == 'reminder':
+        remind_time = datetime.strptime(event.postback.params['datetime'], '%Y-%m-%dT%H:%M')
+        logger.info(f'Reminder time selected: {remind_time}')
+        user_id = event.source.user_id
+        tasks = db.get_tasks(user_id)
+        last_task = tasks[-1] if tasks else None
+        if last_task:
+            db.update_remind_time(last_task['_id'], remind_time)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
 
-# 處理編輯提醒時間的功能
-@handler.add(PostbackEvent)
-def handle_edit_reminder_time(event):
-    user_id = event.source.user_id
-    if event.postback.data.startswith('edit_reminder_time_'):
-        task_id = event.postback.data.split('_')[-1]
-        # 實作提示用戶選擇新的提醒時間並更新資料庫的邏輯
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請選擇新的提醒時間。'))
-
-# 處理刪除任務的功能
-@handler.add(PostbackEvent)
-def handle_delete_task(event):
-    user_id = event.source.user_id
-    if event.postback.data.startswith('delete_task_'):
-        task_id = event.postback.data.split('_')[-1]
-        db.delete_task(task_id)  # 從資料庫刪除指定任務
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='任務刪除成功。'))
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -123,23 +82,10 @@ def handle_message(event):
         tasks = db.get_tasks(user_id)
         if tasks:
             task_list = "\n".join([f"{task['_id']}: {task['task']}" for task in tasks])
-            # Create a carousel template with edit and delete buttons for each task
-            carousel_template = CarouselTemplate(columns=[
-                CarouselColumn(
-                    thumbnail_image_url='https://example.com/task.png',  # Replace with your image URL
-                    title='記錄事項',
-                    text=task['task'],
-                    actions=[
-                        PostbackAction(label='編輯', data=f'edit_{task["_id"]}'),
-                        PostbackAction(label='刪除', data=f'delete_{task["_id"]}')
-                    ]
-                ) for task in tasks
-            ])
-            template_message = TemplateSendMessage(alt_text='所有記錄事項', template=carousel_template)
-            line_bot_api.reply_message(event.reply_token, template_message)
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'所有記錄事項:\n{task_list}'))
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='您目前沒有任何記錄事項。'))
-
+        return
     elif '記錄事項' in msg:
         task = msg.replace('記錄事項', '').strip()
         if task:
