@@ -10,7 +10,6 @@ client = MongoClient(uri)
 
 #第一個db的建立
 db = client['MongoClient']
-collection = db['Database']
 #===============to do list=============================================
 collection = db['to_do_list']
 def get_tasks(user_id):
