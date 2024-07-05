@@ -49,7 +49,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Channel Access Token
-line_bot_api = LineBotApi('GPFEdFRLgM9XvgeoTS16R6c/JJ+RCsAn1DkmU6etLml1g+HE7tPJo02o/7pwr8qZ+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHsztFfRsKs8vH/NGc+VSR2cjaf+kgUpLXmTvtTEY8wMSYIQdB04t89/1O/w1cDnyilFU=')
+line_bot_api = LineBotApi('fqpkaylucHfFHRd3QwkPkjWlF7zKfEF7g7HBg1+uNRJhBtSvRcqnR0lBLDh8mQdG+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHszsFi4ZG+GvBN7nGezkPe0PtCo6+OhJpR4b9cQTyjGjThQdB04t89/1O/w1cDnyilFU=')
 # Channel Secret
 handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
 
