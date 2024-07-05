@@ -1,4 +1,5 @@
 #這些是LINE官方開放的套件組合透過import來套用這個檔案上
+from linebot import LineBotApi, WebhookHandler
 from linebot.models import *
 import mongodb_function as db
 import logging
@@ -212,58 +213,55 @@ def image_carousel_message1():
     return message
 
 #===============to do list=============================================
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
+def handle_message(event, line_bot_api):
     msg = event.message.text
     user_id = event.source.user_id
 
-    if msg == '記事情':
-        # 提示用户输入要记录的事项
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text='請輸入要記的事情：')
-        )
-        # 记录用户正在输入事项的状态
-        db.update_one(
-            {"user_id": user_id},
-            {"$set": {"state": "input_task"}},
-            upsert=True
-        )
-    elif '提醒事項' in msg:
-        # 查询用户的所有事项并返回
-        tasks = db.find_many({"user_id": user_id})
-        if tasks:
-            task_messages = []
-            for task in tasks:
-                task_messages.append(TextSendMessage(text=f"事项: {task['task']}, 提醒时间: {task['reminder_time']}"))
-            line_bot_api.reply_message(event.reply_token, task_messages)
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='沒有提醒事項。'))
-    else:
-        # 检查用户是否在输入任务的状态
-        user_state = db.find_one({"user_id": user_id})
-        if user_state and user_state.get("state") == "input_task":
-            # 保存事项
-            task_id = db.insert_one({"user_id": user_id, "task": msg, "reminder_time": None}).inserted_id
+    try:
+        if '記事情' in msg:
+            # 提示用戶輸入任務
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text='請選擇提醒時間：')
+                TextSendMessage(text='請輸入要記的事情：')
             )
-            # 发送时间选择器
-            send_datetime_picker(event, line_bot_api, str(task_id))
-            # 更新用户状态为选择提醒时间
-            db.update_one(
+            # 記錄用戶正在輸入任務的狀態
+            db.collection.update_one(
                 {"user_id": user_id},
-                {"$set": {"state": "choose_reminder_time"}},
+                {"$set": {"state": "input_task"}},
                 upsert=True
             )
+        elif '提醒事項' in msg:
+            # 檢索用戶的所有任務並返回
+            send_to_do_list(event, line_bot_api, user_id)
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
-
+            # 檢查用戶是否處於輸入任務的狀態
+            user_state = db.collection.find_one({"user_id": user_id})
+            if user_state and user_state.get("state") == "input_task":
+                # 保存任務
+                db.add_new_task(user_id, msg, None)
+                task_id = str(db.collection.find_one({"user_id": user_id, "task": msg})['_id'])
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text='請選擇提醒時間：')
+                )
+                # 發送時間選擇器
+                send_datetime_picker(event, line_bot_api, task_id)
+                # 更新用戶狀態為選擇提醒時間
+                db.collection.update_one(
+                    {"user_id": user_id},
+                    {"$set": {"state": "choose_reminder_time"}},
+                    upsert=True
+                )
+            else:
+                # 如果不是輸入任務的狀態，則回覆收到的消息
+                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
+    except Exception as e:
+        logger.error(f"處理消息時發生錯誤: {e}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
 def send_datetime_picker(event, line_bot_api, task_id):
     try:
-        logger.info("Sending datetime picker")
+        logger.info("發送日期時間選擇器")
 
         flex_message = FlexSendMessage(
             alt_text='選擇提醒時間',
@@ -275,9 +273,9 @@ def send_datetime_picker(event, line_bot_api, task_id):
                         ButtonComponent(
                             action=DatetimePickerAction(
                                 label='選擇日期時間',
-                                data=f'reminder_time,{task_id}',  # 发送包含 task_id 的 data
+                                data=f'reminder_time,{task_id}',  # 包含 task_id 的數據
                                 mode='datetime',
-                                min=datetime.datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                min=datetime.now().strftime('%Y-%m-%dT%H:%M'),
                                 max=None
                             )
                         )
@@ -287,13 +285,12 @@ def send_datetime_picker(event, line_bot_api, task_id):
         )
         line_bot_api.reply_message(event.reply_token, flex_message)
     except Exception as e:
-        logger.error(f"Error in send_datetime_picker: {e}")
+        logger.error(f"發送日期時間選擇器時發生錯誤: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
-
 
 def send_to_do_list(event, line_bot_api, user_id):
     try:
-        logger.info("Sending to-do list")
+        logger.info("發送待辦事項列表")
         tasks = db.get_tasks(user_id)
         contents = []
         for task in tasks:
@@ -324,74 +321,48 @@ def send_to_do_list(event, line_bot_api, user_id):
         )
         line_bot_api.reply_message(event.reply_token, flex_message)
     except Exception as e:
-        logger.error(f"Error in send_to_do_list: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
-
-def handle_postback(event, line_bot_api):
-    data = event.postback.data
-
-    try:
-        if data.startswith('reminder_time'):
-            handle_reminder_time(event, line_bot_api, data)
-        elif data.startswith('delete'):
-            handle_delete(event, line_bot_api, data)
-    except Exception as e:
-        logger.error(f"Error handling postback: {e}")
+        logger.error(f"發送待辦事項列表時發生錯誤: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
 
 def handle_reminder_time(event, line_bot_api, data):
     try:
-        logger.info(f"Received postback data: {data}")
+        logger.info(f"收到回傳數據: {data}")
 
-        # 确保 data 中包含两个部分: reminder_time 和 task_id
+        # 確保數據包含兩部分: reminder_time 和 task_id
         if data.count(',') != 1:
-            raise ValueError(f"Invalid data format for reminder_time: {data}")
+            raise ValueError(f"提醒時間數據格式無效: {data}")
 
-        # 解析数据
+        # 解析數據
         _, task_id = data.split(',', 1)
         
-        # 确保 task_id 是有效的 ObjectId
+        # 確保 task_id 是有效的 ObjectId
         if not ObjectId.is_valid(task_id):
-            raise ValueError(f"Invalid task_id: {task_id}")
+            raise ValueError(f"無效的 task_id: {task_id}")
 
-        # 从 event.postback.params 中获取 new_time
+        # 從 event.postback.params 中獲取新時間
         new_time = event.postback.params.get('datetime')
         
         if not new_time:
-            raise ValueError("New time is not provided in the callback params.")
+            raise ValueError("在回調參數中未提供新時間.")
 
-        logger.info(f"Parsed task_id: {task_id}, new_time: {new_time}")
+        logger.info(f"解析的 task_id: {task_id}, 新時間: {new_time}")
 
-        # 更新提醒时间
+        # 在數據庫中更新提醒時間
         db.update_remind_time(task_id, new_time)
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=f'提醒時間已更新為：{new_time}')
         )
-        # 重置用户状态
+        # 重置用戶狀態
         user_id = event.source.user_id
-        db.update_one(
+        db.collection.update_one(
             {"user_id": user_id},
             {"$set": {"state": "idle"}},
             upsert=True
         )
     except ValueError as ve:
-        logger.error(f"ValueError in handle_reminder_time: {ve}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="資料格式錯誤，請稍後再試。"))
+        logger.error(f"處理提醒時間時出現數據錯誤: {ve}")
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="數據格式錯誤，請稍後再試。"))
     except Exception as e:
-        logger.error(f"Error in handle_reminder_time: {e}")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
-
-
-def handle_delete(event, line_bot_api, data):
-    try:
-        logger.info(f"Received postback data: {data}")
-        task_id = data.split('=')[1]
-        db.delete_task(task_id)
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text='事項已刪除')
-        )
-    except Exception as e:
-        logger.error(f"Error in handle_delete: {e}")
+        logger.error(f"處理提醒時間時發生錯誤: {e}")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="發生錯誤，請稍後再試。"))
