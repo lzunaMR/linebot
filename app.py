@@ -78,6 +78,13 @@ def handle_message(event):
     elif '哈拉' in msg:
         message = TextSendMessage(text='https://pay.halapla.net')
         line_bot_api.reply_message(event.reply_token, message)
+    elif '所有記錄事項' in msg:
+        tasks = db.get_all_tasks()
+        if tasks:
+            task_list = "\n".join([f"{task['_id']}: {task['task']}" for task in tasks])
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'所有記錄事項:\n{task_list}'))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='目前沒有任何記錄事項。'))
     elif '記錄事項' in msg:
         task = msg.replace('記錄事項', '').strip()
         if task:
@@ -115,13 +122,6 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, datetime_picker_template)
     elif '提醒時間' in msg:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='請使用選擇時間的方式來設定提醒時間。'))
-    elif '所有記錄事項' in msg:
-        tasks = db.get_all_tasks()
-        if tasks:
-            task_list = "\n".join([f"{task['_id']}: {task['task']}" for task in tasks])
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'所有記錄事項:\n{task_list}'))
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='目前沒有任何記錄事項。'))
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
