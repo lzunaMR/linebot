@@ -11,6 +11,7 @@ import message as msg_module
 from new import *
 from Function import *
 import mongodb_function as db
+from bson import ObjectId
 
 app = Flask(__name__, static_folder='./static/tmp', static_url_path='/images')
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
@@ -85,16 +86,15 @@ def handle_message(event):
         line_bot_api.reply_message(event.reply_token, message)
     elif '所有記錄事項' in msg:
         tasks = db.get_tasks(user_id)
-        
         if tasks:
             carousel_columns = []
-            
             for task in tasks:
                 task_id = task['_id']
                 task_text = task['task']
+                creation_date = task['formatted_creation_date']
                 # 创建每个旋转木马的列
                 carousel_column = CarouselColumn(
-                    text=task_text,
+                    text=f"{task_text}\n建立時間: {creation_date}",
                     actions=[
                         PostbackTemplateAction(
                             label='刪除',
