@@ -23,46 +23,6 @@ handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def send_reminder_message(user_id, message_text):
-    try:
-        message = TextSendMessage(text=message_text)
-        line_bot_api.push_message(user_id, messages=message)
-        logger.info(f"Reminder message sent successfully to {user_id}")
-    except LineBotApiError as e:
-        logger.error(f"Failed to send reminder message: {e}")
-
-# Function to test reminder functionality
-def test_reminder():
-    try:
-        # Replace with your user ID
-        user_id = '007william'
-
-        # Set reminder time (e.g., 1 minute from now)
-        remind_time = datetime.now() + timedelta(minutes=1)
-        logger.info(f"Setting reminder time: {remind_time}")
-
-        # Wait until reminder time is reached
-        while datetime.now() < remind_time:
-            time.sleep(10)  # Check every 10 seconds
-
-        # Prepare reminder message content
-        reminder_message = f'This is a reminder message at {datetime.now()}'
-
-        # Send reminder message
-        send_reminder_message(user_id, reminder_message)
-
-    except Exception as e:
-        logger.error(f"Error in test_reminder: {e}")
-
-# Route to trigger the test reminder
-@app.route("/test_reminder", methods=['GET'])
-def trigger_test_reminder():
-    # Run test_reminder function in a separate thread
-    reminder_thread = threading.Thread(target=test_reminder)
-    reminder_thread.start()
-    return 'Testing reminder triggered'
-
-
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -201,16 +161,16 @@ def check_reminders():
             
             for task in remindable_tasks:
                 remind_time = task['remind_time']
-                if remind_time <= current_time:
+                if remind_time <= current_time and not task['reminded']:
                     task_id = task['_id']
                     user_id = task['user_id']
                     task_text = task['task']
                     
-                    # 发送提醒消息
+                    # 回覆提醒消息給使用者
                     message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
-                    line_bot_api.push_message(user_id, messages=message)
+                    line_bot_api.reply_message(task_id, messages=message)
                     
-                    # 标记任务为已提醒
+                    # 標記任務為已提醒
                     db.mark_task_as_reminded(task_id)
                     
             logger.info("Reminder check complete.")
@@ -220,9 +180,9 @@ def check_reminders():
         
         time.sleep(30)  # 每一分钟检查一次
 
+
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=check_reminders)
     reminder_thread.start()
-    test_reminder()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
