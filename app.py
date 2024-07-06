@@ -162,11 +162,11 @@ def check_reminders():
                     user_id = task['user_id']
                     task_text = task['task']
                     
-                    # 回覆提醒消息給使用者，使用 user_id 發送訊息
-                    message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
-                    line_bot_api.push_message(user_id, messages=message)  # 使用 push_message 方法發送訊息
+                    # 发送提醒消息给用户
+                    message = TextSendMessage(text=f'记事提醒：{task_text}')
+                    line_bot_api.push_message(user_id, messages=message)
                     
-                    # 標記任務為已提醒
+                    # 标记任务为已提醒
                     db.mark_task_as_reminded(task['_id'])
                     
             logger.info("Reminder check complete.")
@@ -174,12 +174,14 @@ def check_reminders():
         except Exception as e:
             logger.error(f"Error in reminder checker: {e}")
         
-        time.sleep(30)  # 每 30 秒檢查一次
+        time.sleep(30)  # 每 30 秒检查一次
 
 
 
 if __name__ == "__main__":
+    logger.info("Starting application...")
     reminder_thread = threading.Thread(target=check_reminders)
+    logger.info("Starting reminder thread...")
     reminder_thread.start()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
