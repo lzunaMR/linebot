@@ -149,8 +149,13 @@ def handle_message(event):
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
-if __name__ == "__main__":
+def start_reminder_thread():
     reminder_thread = threading.Thread(target=check_reminders)
     reminder_thread.start()
+    logger.info("Reminder thread started.")
+
+
+if __name__ == "__main__":
+    start_reminder_thread()  # 启动提醒线程
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
