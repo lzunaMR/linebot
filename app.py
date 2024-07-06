@@ -223,5 +223,6 @@ def check_reminders():
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=check_reminders)
     reminder_thread.start()
+    test_reminder()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
