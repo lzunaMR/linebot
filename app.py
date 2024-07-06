@@ -91,10 +91,10 @@ def handle_message(event):
             for task in tasks:
                 task_id = task['_id']
                 task_text = task['task']
-                task_at=task['created_at']
+                task_at=task['created_at'].strftime('%m-%d')
                 # 创建每个旋转木马的列
                 carousel_column = CarouselColumn(
-                    text=task_text+task_at,
+                    text=f'{task_text} - {task_at}',
                     actions=[
                         PostbackTemplateAction(
                             label='刪除',
@@ -150,22 +150,34 @@ def handle_message(event):
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
-# 定時任務：檢查提醒
 def check_reminders():
-    logger.info("Checking reminders...")
+    logger.info("Starting reminder checker...")
     while True:
-        remindable_tasks = db.get_remindable_tasks()
-        current_time = datetime.now()
-        for task in remindable_tasks:
-            remind_time = task['remind_time']
-            if remind_time <= current_time:
-                task_id = task['_id']
-                user_id = task['user_id']
-                task_text = task['task']
-                message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
-                line_bot_api.push_message(user_id, messages=message)
-                db.mark_task_as_reminded(task_id)
-        time.sleep(30)  # 每一分鐘檢查一次
+        try:
+            logger.info("Checking reminders...")
+            remindable_tasks = db.get_remindable_tasks()
+            current_time = datetime.now()
+            
+            for task in remindable_tasks:
+                remind_time = task['remind_time']
+                if remind_time <= current_time:
+                    task_id = task['_id']
+                    user_id = task['user_id']
+                    task_text = task['task']
+                    
+                    # 发送提醒消息
+                    message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
+                    line_bot_api.push_message(user_id, messages=message)
+                    
+                    # 标记任务为已提醒
+                    db.mark_task_as_reminded(task_id)
+                    
+            logger.info("Reminder check complete.")
+        
+        except Exception as e:
+            logger.error(f"Error in reminder checker: {e}")
+        
+        time.sleep(30)  # 每一分钟检查一次
 
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=check_reminders)
