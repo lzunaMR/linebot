@@ -13,7 +13,7 @@ from Function import *
 import mongodb_function as db
 from bson import ObjectId
 
-app = Flask(__name__, static_folder='./static/tmp', static_url_path='/images')
+app = Flask(__name__)
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
 
