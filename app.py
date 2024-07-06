@@ -179,9 +179,14 @@ def check_reminders():
 
 
 if __name__ == "__main__":
+    
     logger.info("Starting application...")
     reminder_thread = threading.Thread(target=check_reminders)
     logger.info("Starting reminder thread...")
     reminder_thread.start()
-    port = int(os.environ.get('PORT', 5000))
+    
+    # 让线程有足够的时间启动
+    time.sleep(1)
+    
+    port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port)
