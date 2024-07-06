@@ -16,11 +16,43 @@ from bson import ObjectId
 app = Flask(__name__, static_folder='./static/tmp', static_url_path='/images')
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 line_bot_api = LineBotApi('fqpkaylucHfFHRd3QwkPkjWlF7zKfEF7g7HBg1+uNRJhBtSvRcqnR0lBLDh8mQdG+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHszsFi4ZG+GvBN7nGezkPe0PtCo6+OhJpR4b9cQTyjGjThQdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def test_reminder():
+    try:
+        # Replace with your user ID
+        user_id = 'YOUR_USER_ID'
+
+        # Set reminder time (e.g., 1 minute from now)
+        remind_time = datetime.now() + timedelta(minutes=1)
+        logger.info(f"Setting reminder time: {remind_time}")
+
+        # Wait until reminder time is reached
+        while datetime.now() < remind_time:
+            time.sleep(10)  # Check every 10 seconds
+
+        # Prepare message content
+        message = TextSendMessage(text=f'This is a reminder message at {datetime.now()}')
+
+        # Send message
+        response = line_bot_api.push_message(user_id, messages=message)
+        logger.info(f"Message sent successfully: {response}")
+
+    except LineBotApiError as e:
+        logger.error(f"Failed to send message: {e}")
+
+# Route to trigger the test reminder
+@app.route("/test_reminder", methods=['GET'])
+def trigger_test_reminder():
+    # Run test_reminder function in a separate thread
+    reminder_thread = threading.Thread(target=test_reminder)
+    reminder_thread.start()
+    return 'Testing reminder triggered'
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
