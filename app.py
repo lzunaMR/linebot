@@ -51,7 +51,7 @@ def handle_postback(event):
     elif event.postback.data.startswith('delete_task&'):
         task_id = event.postback.data.split('&')[1]
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
-        
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg = event.message.text
@@ -159,23 +159,23 @@ def check_reminders():
             for task in remindable_tasks:
                 remind_time = task['remind_time']
                 if remind_time <= current_time and not task['reminded']:
-                    task_id = task['_id']
                     user_id = task['user_id']
                     task_text = task['task']
                     
-                    # 回覆提醒消息給使用者
+                    # 回覆提醒消息給使用者，使用 user_id 發送訊息
                     message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
-                    line_bot_api.reply_message(task_id, messages=message)
+                    line_bot_api.push_message(user_id, messages=message)  # 使用 push_message 方法發送訊息
                     
                     # 標記任務為已提醒
-                    db.mark_task_as_reminded(task_id)
+                    db.mark_task_as_reminded(task['_id'])
                     
             logger.info("Reminder check complete.")
         
         except Exception as e:
             logger.error(f"Error in reminder checker: {e}")
         
-        time.sleep(30)  # 每一分钟检查一次
+        time.sleep(30)  # 每 30 秒檢查一次
+
 
 
 if __name__ == "__main__":
