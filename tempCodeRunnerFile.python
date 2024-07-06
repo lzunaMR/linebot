@@ -1,0 +1,31 @@
+from linebot import LineBotApi
+from linebot.models import TextSendMessage
+from datetime import datetime, timedelta
+import os
+import time
+
+# 设置 LINE Bot 的 Channel Access Token
+line_bot_api = LineBotApi('fqpkaylucHfFHRd3QwkPkjWlF7zKfEF7g7HBg1+uNRJhBtSvRcqnR0lBLDh8mQdG+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHszsFi4ZG+GvBN7nGezkPe0PtCo6+OhJpR4b9cQTyjGjThQdB04t89/1O/w1cDnyilFU=')
+
+# 用户 ID（需要将其替换为你的 LINE 用户 ID）
+user_id = '007william'
+
+# 设置提醒时间
+remind_time = datetime.now() + timedelta(minutes=1)  # 设置提醒时间为当前时间的1分钟后
+
+# 在日志中记录设置的提醒时间
+print(f"设置提醒时间为：{remind_time}")
+
+# 等待直到达到提醒时间
+while datetime.now() < remind_time:
+    time.sleep(10)  # 每隔10秒检查一次
+
+# 达到提醒时间后，准备要发送的消息内容
+message = TextSendMessage(text=f'这是一条提醒消息，发送时间：{datetime.now()}')
+
+# 发送消息
+try:
+    response = line_bot_api.push_message(user_id, messages=message)
+    print(f"Message sent successfully: {response}")
+except Exception as e:
+    print(f"Failed to send message: {e}")

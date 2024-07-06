@@ -91,7 +91,7 @@ def handle_message(event):
             for task in tasks:
                 task_id = task['_id']
                 task_text = task['task']
-                task_at=task['created_at'].strftime('%m-%d')
+                task_at=task['created_at'].strftime('%#m月%-d日')
                 # 创建每个旋转木马的列
                 carousel_column = CarouselColumn(
                     text=f'{task_text} - {task_at}',
