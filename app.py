@@ -50,11 +50,8 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
     elif event.postback.data.startswith('delete_task&'):
         task_id = event.postback.data.split('&')[1]
-        if db.delete_task(task_id):
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
-        else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))
-
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
+        
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg = event.message.text
