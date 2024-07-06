@@ -80,20 +80,10 @@ def get_task_count():
         return 0
 
 # 获取所有用户的任务
-"""def get_all_tasks():
-    try:
-        collection = connect_to_mongodb()
-        return list(collection.find())
-    except Exception as e:
-        print(f"Error getting all tasks: {e}")
-        return []"""
 def get_all_tasks():
     try:
         collection = connect_to_mongodb()
-        tasks = list(collection.find())
-        for task in tasks:
-            task['formatted_creation_date'] = task['created_at'].strftime('%m/%d')  # 添加格式化的创建时间
-        return tasks
+        return list(collection.find())
     except Exception as e:
         print(f"Error getting all tasks: {e}")
         return []
