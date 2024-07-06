@@ -41,4 +41,5 @@ def check_reminders():
         time.sleep(30)  # 每30秒检查一次
 
 if __name__ == "__main__":
+    logger.info("Starting linebot_reminder.py...")
     check_reminders()
