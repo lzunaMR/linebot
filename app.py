@@ -91,9 +91,10 @@ def handle_message(event):
             for task in tasks:
                 task_id = task['_id']
                 task_text = task['task']
+                task_at=task['creation_at']
                 # 创建每个旋转木马的列
                 carousel_column = CarouselColumn(
-                    text=task_text,
+                    text=task_text+task_at,
                     actions=[
                         PostbackTemplateAction(
                             label='刪除',
@@ -149,10 +150,24 @@ def handle_message(event):
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
-
+# 定時任務：檢查提醒
+def check_reminders():
+    while True:
+        remindable_tasks = db.get_remindable_tasks()
+        current_time = datetime.now()
+        for task in remindable_tasks:
+            remind_time = task['remind_time']
+            if remind_time <= current_time:
+                task_id = task['_id']
+                user_id = task['user_id']
+                task_text = task['task']
+                message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
+                line_bot_api.push_message(user_id, messages=message)
+                db.mark_task_as_reminded(task_id)
+        time.sleep(30)  # 每一分鐘檢查一次
 
 if __name__ == "__main__":
-    reminder_thread = threading.Thread(target=send_reminder_messages, args=(line_bot_api,))
+    reminder_thread = threading.Thread(target=check_reminders)
     reminder_thread.start()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)

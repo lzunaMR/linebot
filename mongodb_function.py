@@ -33,17 +33,11 @@ def update_remind_time(task_id, remind_time):
 def update_reminded_status(task_id):
     try:
         collection = connect_to_mongodb()
-        
-        # Update the document in MongoDB
         result = collection.update_one(
             {'_id': ObjectId(task_id)},
             {'$set': {'reminded': True}}  # 更新提醒状态为已提醒
         )
-        
-        if result.modified_count > 0:
-            return True
-        else:
-            return False
+        return result.modified_count > 0
     except Exception as e:
         print(f"Error updating reminded status: {e}")
         return False
