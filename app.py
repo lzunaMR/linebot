@@ -2,6 +2,7 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
+from linebot_reminder import check_reminders
 import threading
 import os
 from datetime import datetime, timedelta
@@ -148,45 +149,8 @@ def handle_message(event):
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
-def check_reminders():
-    logger.info("Starting reminder checker...")
-    while True:
-        try:
-            logger.info("Checking reminders...")
-            remindable_tasks = db.get_remindable_tasks()
-            current_time = datetime.now()
-            
-            for task in remindable_tasks:
-                remind_time = task['remind_time']
-                if remind_time <= current_time and not task['reminded']:
-                    user_id = task['user_id']
-                    task_text = task['task']
-                    
-                    # 发送提醒消息给用户
-                    message = TextSendMessage(text=f'记事提醒：{task_text}')
-                    line_bot_api.push_message(user_id, messages=message)
-                    
-                    # 标记任务为已提醒
-                    db.mark_task_as_reminded(task['_id'])
-                    
-            logger.info("Reminder check complete.")
-        
-        except Exception as e:
-            logger.error(f"Error in reminder checker: {e}")
-        
-        time.sleep(30)  # 每 30 秒检查一次
-
-
-
 if __name__ == "__main__":
-    
-    logger.info("Starting application...")
     reminder_thread = threading.Thread(target=check_reminders)
-    logger.info("Starting reminder thread...")
     reminder_thread.start()
-    
-    # 让线程有足够的时间启动
-    time.sleep(1)
-    
-    port = int(os.environ.get('PORT', 5001))
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
