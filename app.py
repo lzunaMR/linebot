@@ -23,10 +23,19 @@ handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def send_reminder_message(user_id, message_text):
+    try:
+        message = TextSendMessage(text=message_text)
+        line_bot_api.push_message(user_id, messages=message)
+        logger.info(f"Reminder message sent successfully to {user_id}")
+    except LineBotApiError as e:
+        logger.error(f"Failed to send reminder message: {e}")
+
+# Function to test reminder functionality
 def test_reminder():
     try:
         # Replace with your user ID
-        user_id = 'YOUR_USER_ID'
+        user_id = '007william'
 
         # Set reminder time (e.g., 1 minute from now)
         remind_time = datetime.now() + timedelta(minutes=1)
@@ -36,15 +45,14 @@ def test_reminder():
         while datetime.now() < remind_time:
             time.sleep(10)  # Check every 10 seconds
 
-        # Prepare message content
-        message = TextSendMessage(text=f'This is a reminder message at {datetime.now()}')
+        # Prepare reminder message content
+        reminder_message = f'This is a reminder message at {datetime.now()}'
 
-        # Send message
-        response = line_bot_api.push_message(user_id, messages=message)
-        logger.info(f"Message sent successfully: {response}")
+        # Send reminder message
+        send_reminder_message(user_id, reminder_message)
 
-    except LineBotApiError as e:
-        logger.error(f"Failed to send message: {e}")
+    except Exception as e:
+        logger.error(f"Error in test_reminder: {e}")
 
 # Route to trigger the test reminder
 @app.route("/test_reminder", methods=['GET'])
@@ -53,6 +61,7 @@ def trigger_test_reminder():
     reminder_thread = threading.Thread(target=test_reminder)
     reminder_thread.start()
     return 'Testing reminder triggered'
+
 
 # 監聽所有來自 /callback 的 Post Request
 @app.route("/callback", methods=['POST'])
