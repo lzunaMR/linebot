@@ -52,7 +52,7 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))
-            
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     msg = event.message.text
@@ -164,7 +164,7 @@ def send_reminder_messages():
 
 
 if __name__ == "__main__":
-    reminder_thread = threading.Thread(target=send_reminder_messages)
+    reminder_thread = threading.Thread(target=send_reminder_messages, args=(line_bot_api,))
     reminder_thread.start()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
