@@ -7,7 +7,7 @@ def keep_render_awake():
     current_time = datetime.datetime.now().time()
     if current_time < datetime.time(0, 0) or current_time >= datetime.time(7, 0):
         try:
-            response = requests.get("https://你的render應用URL")
+            response = requests.get("https://linebot-21rc.onrender.com")
             if response.status_code == 200:
                 print("Render is awake")
             else:
