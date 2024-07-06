@@ -152,6 +152,7 @@ def handle_message(event):
 
 # 定時任務：檢查提醒
 def check_reminders():
+    logger.info("Checking reminders...")
     while True:
         remindable_tasks = db.get_remindable_tasks()
         current_time = datetime.now()

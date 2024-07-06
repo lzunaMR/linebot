@@ -106,9 +106,11 @@ def get_remindable_tasks():
     try:
         collection = connect_to_mongodb()
         remindable_tasks = list(collection.find({'remind_time': {'$lte': current_time}, 'reminded': False}))
+        logger.info(f"Found {len(remindable_tasks)} remindable tasks.")
         return remindable_tasks
     except Exception as e:
         print(f"Error getting remindable tasks: {e}")
+        logger.error(f"Error getting remindable tasks: {e}")
         return []
 
 def mark_task_as_reminded(task_id):
