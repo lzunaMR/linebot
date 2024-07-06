@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
 import time
+import threading
 # MongoDB连接URI
 uri = "mongodb+srv://789william:123Vanoss@cluster0.binj4fs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
@@ -133,16 +134,3 @@ def mark_task_as_reminded(task_id):
     except Exception as e:
         print(f"Error marking task as reminded: {e}")
 
-def send_reminder_messages(line_bot_api):
-    while True:
-        remindable_tasks = get_remindable_tasks()
-        for task in remindable_tasks:
-            user_id = task['user_id']
-            task_id = task['_id']
-            task_content = task['task']
-            try:
-                line_bot_api.push_message(user_id, TextSendMessage(text=f"提醒：{task_content}"))
-                mark_task_as_reminded(task_id)
-            except Exception as e:
-                print(f"Error sending reminder message: {e}")
-        time.sleep(60)  # 每分钟检查一次
