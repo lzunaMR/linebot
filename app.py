@@ -154,6 +154,34 @@ def start_reminder_thread():
     reminder_thread.start()
     logger.info("Reminder thread started.")
 
+def check_reminders():
+    logger.info("Starting reminder checker...")
+    while True:
+        try:
+            logger.info("Checking reminders...")
+            remindable_tasks = db.get_remindable_tasks()
+            current_time = datetime.now()
+            
+            for task in remindable_tasks:
+                remind_time = task['remind_time']
+                if remind_time <= current_time and not task['reminded']:
+                    task_id = task['_id']
+                    user_id = task['user_id']
+                    task_text = task['task']
+                    
+                    # 发送提醒消息给用户
+                    message = TextSendMessage(text=f'记事提醒：{task_text}')
+                    line_bot_api.push_message(user_id, messages=message)
+                    
+                    # 标记任务为已提醒
+                    db.mark_task_as_reminded(task_id)
+                    
+            logger.info("Reminder check complete.")
+        
+        except Exception as e:
+            logger.error(f"Error in reminder checker: {e}")
+        
+        time.sleep(30)  # 每30秒检查一次
 
 if __name__ == "__main__":
     start_reminder_thread()  # 启动提醒线程
