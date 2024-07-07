@@ -2,7 +2,6 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import *
-from linebot_reminder import check_reminders
 import threading
 import os
 from datetime import datetime, timedelta
@@ -14,7 +13,7 @@ from Function import *
 import mongodb_function as db
 from bson import ObjectId
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='./static/tmp', static_url_path='/images')
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
 
@@ -51,7 +50,10 @@ def handle_postback(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
     elif event.postback.data.startswith('delete_task&'):
         task_id = event.postback.data.split('&')[1]
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
+        if db.delete_task(task_id):
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -149,11 +151,6 @@ def handle_message(event):
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
-def start_reminder_thread():
-    reminder_thread = threading.Thread(target=check_reminders)
-    reminder_thread.start()
-    logger.info("Reminder thread started.")
-
 def check_reminders():
     logger.info("Starting reminder checker...")
     while True:
@@ -169,11 +166,11 @@ def check_reminders():
                     user_id = task['user_id']
                     task_text = task['task']
                     
-                    # 发送提醒消息给用户
-                    message = TextSendMessage(text=f'记事提醒：{task_text}')
-                    line_bot_api.push_message(user_id, messages=message)
+                    # 回覆提醒消息給使用者
+                    message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
+                    line_bot_api.reply_message(task_id, messages=message)
                     
-                    # 标记任务为已提醒
+                    # 標記任務為已提醒
                     db.mark_task_as_reminded(task_id)
                     
             logger.info("Reminder check complete.")
@@ -181,9 +178,11 @@ def check_reminders():
         except Exception as e:
             logger.error(f"Error in reminder checker: {e}")
         
-        time.sleep(30)  # 每30秒检查一次
+        time.sleep(30)  # 每一分钟检查一次
+
 
 if __name__ == "__main__":
-    start_reminder_thread()  # 启动提醒线程
+    reminder_thread = threading.Thread(target=check_reminders)
+    reminder_thread.start()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
