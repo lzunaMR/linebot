@@ -185,7 +185,7 @@ def check_reminders():
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=check_reminders)
     reminder_thread.start()
-    keep_awake_thread = threading.Thread(target=keep_awake.run_schedule)
-    keep_awake_thread.start()
+    #keep_awake_thread = threading.Thread(target=keep_awake.run_schedule)
+    #keep_awake_thread.start()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
