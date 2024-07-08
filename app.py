@@ -179,7 +179,6 @@ def check_reminders():
         
         except Exception as e:
             logger.error(f"Error in reminder checker: {e}")
-        
         time.sleep(30)  # 每一分钟检查一次
 
 
