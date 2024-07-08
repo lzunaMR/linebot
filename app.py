@@ -151,6 +151,11 @@ def handle_message(event):
     else:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=msg))
 
+def start_reminder_thread():
+    reminder_thread = threading.Thread(target=check_reminders)
+    reminder_thread.start()
+    logger.info("Reminder thread started.")
+
 def check_reminders():
     logger.info("Starting reminder checker...")
     while True:
@@ -166,9 +171,9 @@ def check_reminders():
                     user_id = task['user_id']
                     task_text = task['task']
                     
-                    # 回覆提醒消息給使用者
-                    message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
-                    line_bot_api.push_message(user_id, message)
+                    # 发送提醒消息给用户
+                    message = TextSendMessage(text=f'记事提醒：{task_text}')
+                    line_bot_api.push_message(user_id, messages=message)
                     
                     # 标记任务为已提醒
                     db.mark_task_as_reminded(task_id)
@@ -177,12 +182,11 @@ def check_reminders():
         
         except Exception as e:
             logger.error(f"Error in reminder checker: {e}")
+        
         time.sleep(30)  # 每30秒检查一次
 
 if __name__ == "__main__":
-    reminder_thread = threading.Thread(target=check_reminders)
-    logger.info("Starting reminder thread...")
-    reminder_thread.start()
+    start_reminder_thread()  # 启动提醒线程
     # 启动保持 Render 唤醒线程
     keep_awake_thread = threading.Thread(target=keep_render_awake.run_schedule)
     logger.info("Starting keep awake thread...")
