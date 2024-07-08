@@ -1,7 +1,6 @@
 line-bot-sdk
-flask
-pymongo==4.7.2
+Flask
+pymongo
 dnspython==1.16.0
 gunicorn
 schedule
-bson
