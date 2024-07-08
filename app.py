@@ -12,10 +12,12 @@ from new import *
 from Function import *
 import mongodb_function as db
 from bson import ObjectId
+import keep_awake
 
 app = Flask(__name__, static_folder='./static/tmp', static_url_path='/images')
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
+taiwan_tz = pytz.timezone('Asia/Taipei')
 
 line_bot_api = LineBotApi('fqpkaylucHfFHRd3QwkPkjWlF7zKfEF7g7HBg1+uNRJhBtSvRcqnR0lBLDh8mQdG+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHszsFi4ZG+GvBN7nGezkPe0PtCo6+OhJpR4b9cQTyjGjThQdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
@@ -184,5 +186,7 @@ def check_reminders():
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=check_reminders)
     reminder_thread.start()
+    keep_awake_thread = threading.Thread(target=keep_awake.run_schedule)
+    keep_awake_thread.start()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
