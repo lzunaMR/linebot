@@ -17,15 +17,13 @@ import keep_render_awake
 app = Flask(__name__)
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
-taiwan_tz = pytz.timezone('Asia/Taipei')
-
 line_bot_api = LineBotApi('fqpkaylucHfFHRd3QwkPkjWlF7zKfEF7g7HBg1+uNRJhBtSvRcqnR0lBLDh8mQdG+SWuHy20Aou8/7zoYbB5pe5CPvQCJuK/m98IesmHszsFi4ZG+GvBN7nGezkPe0PtCo6+OhJpR4b9cQTyjGjThQdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('6881343d399a45c7cce9b8682c7788cb')
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 監聽所有來自 /callback 的 Post Request
+# 监视所有来自 /callback 的 Post 请求
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
@@ -47,15 +45,15 @@ def handle_postback(event):
         last_task = tasks[-1] if tasks else None
         if last_task:
             db.update_remind_time(last_task['_id'], remind_time)
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒時間設定為 {remind_time}'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f'提醒时间设定为 {remind_time}'))
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='無法找到最近記錄的事項。'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='无法找到最近记录的事项。'))
     elif event.postback.data.startswith('delete_task&'):
         task_id = event.postback.data.split('&')[1]
         if db.delete_task(task_id):
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功刪除該記錄事項。'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='已成功删除该记录事项。'))
         else:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='刪除記錄事項時發生錯誤。請稍後再試。'))
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text='删除记录事项时发生错误。请稍后再试。'))
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -94,7 +92,7 @@ def handle_message(event):
             for task in tasks:
                 task_id = task['_id']
                 task_text = task['task']
-                task_at=task['created_at'].strftime('%#m月%-d日')
+                task_at = task['created_at'].strftime('%#m月%-d日')
                 # 创建每个旋转木马的列
                 carousel_column = CarouselColumn(
                     text=f'{task_text} - {task_at}',
@@ -170,17 +168,16 @@ def check_reminders():
                     
                     # 回覆提醒消息給使用者
                     message = TextSendMessage(text=f'記錄事項提醒：{task_text}')
-                    line_bot_api.reply_message(task_id, messages=message)
+                    line_bot_api.push_message(user_id, message)
                     
-                    # 標記任務為已提醒
+                    # 标记任务为已提醒
                     db.mark_task_as_reminded(task_id)
                     
             logger.info("Reminder check complete.")
         
         except Exception as e:
             logger.error(f"Error in reminder checker: {e}")
-        time.sleep(30)  # 每一分钟检查一次
-
+        time.sleep(30)  # 每30秒检查一次
 
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=check_reminders)
