@@ -188,7 +188,7 @@ def check_reminders():
 if __name__ == "__main__":
     start_reminder_thread()  # 启动提醒线程
     # 启动保持 Render 唤醒线程
-    keep_awake_thread = threading.Thread(target=keep_render_awake.run_schedule)
+    keep_awake_thread = threading.Thread(target=keep_render_awake)
     logger.info("Starting keep awake thread...")
     keep_awake_thread.start()
     port = int(os.environ.get('PORT', 5000))
