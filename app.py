@@ -12,7 +12,7 @@ from new import *
 from Function import *
 import mongodb_function as db
 from bson import ObjectId
-import keep_awake
+import keep_render_awake
 
 app = Flask(__name__, static_folder='./static/tmp', static_url_path='/images')
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
@@ -184,8 +184,11 @@ def check_reminders():
 
 if __name__ == "__main__":
     reminder_thread = threading.Thread(target=check_reminders)
+    logger.info("Starting reminder thread...")
     reminder_thread.start()
-    #keep_awake_thread = threading.Thread(target=keep_awake.run_schedule)
-    #keep_awake_thread.start()
+    # 启动保持 Render 唤醒线程
+    keep_awake_thread = threading.Thread(target=keep_render_awake.run_schedule)
+    logger.info("Starting keep awake thread...")
+    keep_awake_thread.start()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
