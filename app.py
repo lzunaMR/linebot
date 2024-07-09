@@ -183,7 +183,7 @@ def check_reminders():
         except Exception as e:
             logger.error(f"Error in reminder checker: {e}")
         
-        time.sleep(30)  # 每30秒检查一次
+        time.sleep(60)  # 每30秒检查一次
 
 if __name__ == "__main__":
     start_reminder_thread()  # 启动提醒线程
