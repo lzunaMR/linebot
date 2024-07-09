@@ -186,13 +186,16 @@ def check_reminders():
         time.sleep(60)  # 每30秒检查一次
 
 if __name__ == "__main__":
+    # 啟動提醒線程
     start_reminder_thread()
     
+    # 開始保持伺服器運行線程
     keep_awake_thread = threading.Thread(target=keep_render_awake)
-    
-    logger.info("Starting keep awake thread...")
     keep_awake_thread.start()
     
+    # 獲取端口並啟動 Flask 應用程式
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Running app on port {port}")
-    app.run(host='0.0.0.0', port=port)
+    
+    # 使用多線程運行 Flask 應用程式
+    app.run(host='0.0.0.0', port=port, threaded=True)
