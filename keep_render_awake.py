@@ -29,3 +29,5 @@ def keep_render_awake():
 
 # 開始執行
 keep_render_awake()
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)
