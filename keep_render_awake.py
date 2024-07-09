@@ -2,7 +2,6 @@ import schedule
 import time
 import datetime
 import requests
-import threading
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -17,13 +16,14 @@ def keep_render_awake():
                 if response.status_code == 200:
                     logger.info("Render is awake")
                 else:
-                    logger.info("Failed to wake up render")
+                    logger.info(f"Failed to wake up render: Status code {response.status_code}")
             except Exception as e:
                 logger.error(f"Error while waking up render: {e}")
-                time.sleep(60)
         else:
             logger.info("Render is asleep")
 
         # 等待10分鐘
         time.sleep(10 * 60)
 
+if __name__ == "__main__":
+    keep_render_awake()

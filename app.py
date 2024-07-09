@@ -12,7 +12,7 @@ from new import *
 from Function import *
 import mongodb_function as db
 from bson import ObjectId
-import keep_render_awake
+from keep_render_awake import keep_render_awake
 
 app = Flask(__name__)
 static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
@@ -186,10 +186,10 @@ def check_reminders():
         time.sleep(60)  # 每30秒检查一次
 
 if __name__ == "__main__":
-    start_reminder_thread()  # 启动提醒线程
+    start_reminder_thread()
     
-    # 启动保持 Render 唤醒线程
     keep_awake_thread = threading.Thread(target=keep_render_awake)
+    keep_awake_thread.daemon = True  # 确保线程在主程序退出时自动结束
     logger.info("Starting keep awake thread...")
     keep_awake_thread.start()
     
