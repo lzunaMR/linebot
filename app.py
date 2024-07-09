@@ -189,10 +189,10 @@ if __name__ == "__main__":
     start_reminder_thread()
     
     keep_awake_thread = threading.Thread(target=keep_render_awake)
-    keep_awake_thread.daemon = True  # 确保线程在主程序退出时自动结束
+    
     logger.info("Starting keep awake thread...")
     keep_awake_thread.start()
     
-    port = int(os.environ.get('PORT', 10000))
+    port = int(os.environ.get('PORT', 5000))
     logger.info(f"Running app on port {port}")
     app.run(host='0.0.0.0', port=port)
