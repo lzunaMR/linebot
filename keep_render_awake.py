@@ -20,6 +20,7 @@ def keep_render_awake():
                     logger.info("Failed to wake up render")
             except Exception as e:
                 logger.error(f"Error while waking up render: {e}")
+                time.sleep(60)
         else:
             logger.info("Render is asleep")
 
